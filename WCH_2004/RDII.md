@@ -13,6 +13,57 @@ cim 9/97 change to allow input of 12 parameters for months
       COMMON/RDII3/TSTEP,TSTEP2,IRATIOS,RDIIAREA,RRMAX
       COMMON/RDII4/CNTRDII(3),CNRAIN,CNEXCESS,SUMOFRS
       LOGICAL IZERO
+      ```markdown
+      ## Fortran Code Explanation
 
+      The following Fortran code snippet defines parameters and common blocks used in the RDII (Rainfall Derived Inflow and Infiltration) calculations.
+
+      ### Parameters
+      - `NTK=50`: Defines the number of TK basins, which may end up being equal to the number of subcatchments.
+
+      ### Common Blocks
+      - `COMMON/RDII/`: Contains arrays and variables related to RDII calculations.
+            - `RDIIT(NTK,3,12)`: Array for RDII parameters.
+            - `RDIIK(NTK,3,12)`: Array for RDII coefficients.
+            - `RDIIR(NW,3,12)`: Array for RDII results.
+            - `SEWAREA(NW)`: Array for sewer area.
+            - `NRDHYET(NTK)`: Array for hyetograph data.
+            - `ICURVE(NW)`: Array for curve numbers.
+            - `DSTORE(NTK,3,12)`: Array for storage data.
+            - `DREC(NTK,3,12)`: Array for recovery data.
+            - `STORAGE(NTK,3,12)`: Array for storage data.
+            - `FLOWII(NW)`: Array for inflow data.
+            - `CONCII(MQUAL)`: Array for concentration data.
+            - `SUMRDII(MQUAL)`: Array for sum of RDII data.
+
+      - `COMMON/RDII2/`: Contains additional arrays and variables for RDII calculations.
+            - `RDTIM(2)`: Array for RDII timing.
+            - `NRDII`: Variable for number of RDII events.
+            - `JRDDAY(2)`: Array for RDII days.
+            - `RDFLOW(NTK,3,2)`: Array for RDII flow data.
+            - `IZERO(NTK,3,2)`: Logical array for zero flow indicators.
+            - `IIRDII`: Variable for RDII index.
+            - `NNTK`: Variable for number of TK basins.
+
+      - `COMMON/RDII3/`: Contains variables for RDII calculations.
+            - `TSTEP`: Variable for time step.
+            - `TSTEP2`: Variable for secondary time step.
+            - `IRATIOS`: Variable for inflow ratios.
+            - `RDIIAREA`: Variable for RDII area.
+            - `RRMAX`: Variable for maximum rainfall rate.
+
+      - `COMMON/RDII4/`: Contains additional variables for RDII calculations.
+            - `CNTRDII(3)`: Array for RDII control data.
+            - `CNRAIN`: Variable for rainfall control.
+            - `CNEXCESS`: Variable for excess control.
+            - `SUMOFRS`: Variable for sum of rainfall and storage.
+
+      ### Data Types
+      - `DOUBLE PRECISION`: Used for high-precision floating-point variables.
+            - `CNTRDII`, `CNRAIN`, `CNEXCESS`, `SUMOFRS`: Variables for RDII calculations.
+
+      - `LOGICAL`: Used for logical variables.
+            - `IZERO`: Logical array for zero flow indicators.
+      ```
 
 ``` 

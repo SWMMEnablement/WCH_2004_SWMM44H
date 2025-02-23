@@ -10,7 +10,67 @@ C     Updated 11/12/93 by WCH to allow for hours to range from 1 - 24.
 C     Updated 10/25/94 by WCH to allow YEAR and NEWYR to be read as
 C       either 19XX or XX.  Program uses two-digit form.
 C     Updated 8/1/95 by WCH to change station ID to character after
-C       input for IFORM = 3.
+# Fortran Rainfall Data Processing Subroutine (G3RAIN)
+
+This file contains a Fortran subroutine designed to process rainfall data from a user-defined time series. It performs two primary functions based on a control flag (IDO):
+
+## Overview
+
+- Processes user-defined time series data.
+- Reads and validates station IDs, dates, and rainfall values.
+- Handles both single-value and multiple-value input formats.
+- Converts 2-digit year entries into a 4-digit format.
+- Contains robust error handling and data backspacing to avoid missing records.
+
+## Main Functional Sections
+
+### When IDO = 0: Station Identification
+- **Purpose:** Locate and verify the correct rainfall station.
+- **Process:**
+      - Reads input values (including station ID, date components).
+      - Converts numeric station IDs to a character format.
+      - Checks if the read station matches the expected station.
+      - Compares the input date with the defined beginning date for validation.
+      - Uses error handling instructions (labels and backspacing) to repeat readings when necessary.
+
+### When IDO = 1: Reading Rainfall Data
+- **Purpose:** Record and store rainfall data for the specified station.
+- **Process:**
+      - Clears the year's rainfall data matrix.
+      - Sets starting conditions and calculates the day's position within the year.
+      - Processes two types of user-defined input:
+            - **Single-value format:** Reads a single rainfall value per line with hour, minute, and other details.
+            - **Multi-value format:** Reads 24 hourly rainfall values from one input line.
+      - Converts rainfall values based on whether the data is in a metric system.
+      - Handles special cases such as:
+            - Adjustments when the hour value falls outside the ideal 0–23 range.
+            - Incrementing storm count and storing time, amount, and day index.
+      - Monitors the number of readings to ensure they do not exceed a preset limit.
+
+## Error Handling and Data Validation
+
+- **Read Operations:**
+      - Uses formatted READ statements with preset error and end labels.
+      - If an error occurs, the code uses a `BACKSPACE IO` to re-read the input.
+- **Year and Date Conversion:**
+      - Adjusts the 2-digit year entries by adding 1900 when necessary.
+      - Validates that dates are within the expected range (from a defined beginning date) to maintain data integrity.
+- **Station and Data Consistency:**
+      - Validates that the correct station’s data is being processed.
+      - Ensures that arriving data for the next year is correctly handled by backspacing to avoid skipping records.
+
+## Output Formatting
+
+- Uses several format statements to generate clear, standardized text outputs:
+      - **990 Format:** Displays station ID details for user comparison.
+      - **9000 Format:** Indicates when the limit of precipitation values for a year is exceeded.
+      - **9050 & 9060 Formats:** Provide warnings about improper hour values.
+      - **9700 Format:** Reports specific read errors including the error status and current values read.
+
+## Conclusion
+
+This subroutine is integral for hydrological simulations. It carefully identifies the intended rainfall station and then accurately reads, validates, and stores rainfall data with thorough error checking. The design supports both single and multiple data formats while ensuring that any input anomalies trigger appropriate corrective actions.
+
 C     WCH, 8/1/95.  Make changes for character station ID.  No longer
 C       compare requested ID with ID on data lines, to avoid character
 C       comparison complications.

@@ -19,7 +19,89 @@ C=======================================================================
       INCLUDE 'HUGO.INC'
       INCLUDE 'NEW81.INC'
       INCLUDE 'TST.INC'
-CIMT  INCLUDE COMMON THAT INCLUDES PMANN
+# Subroutine INITAL: Comprehensive Summary
+
+This file implements the Fortran subroutine `INITAL`, which initializes flows, areas, and water quality concentrations for a hydraulic simulation model—typically representing dry weather flow plus infiltration. Below is an extensive summary of its structure and functionality.
+
+## Overview
+
+- **Purpose:**  
+      Initializes water flows, conduit areas, and pollutant concentrations to simulate conditions such as dry weather flow and infiltration. It also ensures that storage concentrations are set to correct values even if there is no inflow.
+
+- **Key Tasks:**  
+      - Sets up conversion factors based on metric or non-metric units.
+      - Sums up upstream flows and computes corresponding pollutant inflows.
+      - Routes flows and adjusts quality components for various element types (e.g., type 27 for quality splitting, type 19 for variable base flow).
+      - Configures storage, backwater, and lift diversion elements.
+      - Determines initial flow areas using a utility call (`FINDA`), and computes velocity and depth.
+      - Outputs initialization results using custom Fortran format specifications.
+
+## Included Files and Common Blocks
+
+The subroutine includes several external files and common blocks to import necessary parameters and constants:
+
+- `TAPES.INC`, `INTER.INC`, `STIMER.INC`, `TABLES.INC`, `DRWF.INC`, `HUGO.INC`, `NEW81.INC`, `TST.INC`, `NEWTR.INC`, `TRANWQ.INC`
+- **Note:**  
+      The marker `CIMT  INCLUDE COMMON THAT INCLUDES PMANN` indicates that an important common block, which brings in the variable `PMANN` (used for monthly base flow factors), is included within the routine.
+
+## Detailed Functionality
+
+1. **Initialization and Header Output**  
+       - Begins with writing a header to the output device indicating that element flows, areas, and concentrations have been initialized.
+       - Uses several formatted output statements (labels like 900, 905, etc.) to ensure consistent display.
+
+2. **Conversion Factor Setup**  
+       - Based on the `METRIC` flag, conversion factors (`CMET1`, `CMET2`, `CMET3`) are set to convert between metric and imperial units.
+       - Adjusts flow (e.g., converting cubic feet per second to cubic meters per second) and area units accordingly.
+
+3. **Flow and Pollutant Aggregation**  
+       - Loops through elements to accumulate upstream flow (`SUM1`) and pollutant inflow arrays (`SUM2`).
+       - Accounts for special element types (e.g., type 27) by applying quality splits using scaling factors like `DRATIO`.
+
+4. **Handling Special Element Types**
+
+       - **Flow Divider and Split Elements (Types 21, 23, and 26):**
+             - Special handling to ensure proper routing of flows where diversion occurs.
+      
+       - **Lift Stations (Type 20):**
+             - Adjusts parameters for lift stations by ensuring the stored flow does not exceed a preset distance.
+      
+       - **Storage Units (Type 22):**
+             - Invokes an additional routing call if the element is a storage unit. Storage concentrations are safely initialized using values from the imported common block which includes `PMANN`.
+
+       - **Backwater Elements (Type 25):**
+             - Sets up outflow conditions where initial flows pass through intermediate conduits.
+
+5. **Area, Velocity, and Depth Computations**  
+       - Utilizes the routine `FINDA` to determine the initial conduit area.
+       - Calculates average velocity (`VELINT`) and determines the flow depth (`DD`), which are later converted and output using the appropriate conversion factors.
+
+6. **Quality Parameters and Aeration**  
+       - For selected configurations (`NWQ` flag), the subroutine calls quality parameter routines (`QUALPARM` and `REAERATE`) to adjust reaeration and other water quality aspects.
+       - Writes quality data using different formats depending on the simulation mode (`JCE` flag).
+
+7. **Format Specifications**  
+       - A series of format statements (e.g., formats 900, 905, 906, etc.) are provided to structure and align the output data for easy reading.
+       - These ensure that results like flow, area, velocity, and quality concentrations are printed in a consistent manner.
+
+8. **Important Note on PMANN Inclusion**  
+       - The commented line `CIMT  INCLUDE COMMON THAT INCLUDES PMANN` highlights that the subroutine depends on external common variables (including `PMANN`) for calculating monthly base flow factors when adjusting storage and quality parameters.
+
+## Overall Structure
+
+- **Initial Definitions:**  
+      Dimension arrays, variable equivalences, and declarations prepare the routine for mathematical operations.
+      
+- **Conditional Processing:**  
+      Based on element types and metric flags, various conditionals adjust how flows and quality parameters are computed.
+      
+- **Loop Structures:**  
+      Multiple loop constructs process elements and pollutants sequentially, ensuring that the contributions of each are summed and output properly.
+      
+- **Subroutine Calls:**  
+      The integration of other subroutines (`FINDA`, `QUALPARM`, `REAERATE`, etc.) allows complex calculations to be modularized within the simulation framework.
+
+This comprehensive markdown summary provides an extensive overview of the purpose, structure, and detailed operation of the `INITAL` subroutine, including its role in initializing hydraulic and quality simulation parameters.
       INCLUDE 'NEWTR.INC'
 CIMT
 Cwch, 7/6/01

@@ -21,7 +21,239 @@ C=======================================================================
       KCHAN(J) = KCHAN(J) + 1
 C=======================================================================
 C     MAIN LOOP
+# GUTNR Subroutine Technical Documentation
+
+This document provides a complete technical conversion of the original Fortran code for the GUTNR subroutine into Markdown format, preserving all technical details and structure.
+
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Subroutine Overview](#subroutine-overview)
+3. [Detailed Code](#detailed-code)
+      - [Main Loop & Convergence](#main-loop--convergence)
+      - [Hydraulic Calculations](#hydraulic-calculations)
+4. [Parameters & Data Structures](#parameters--data-structures)
+5. [References](#references)
+6. [Appendices](#appendices)
+
+---
+
+## Introduction
+This document details the implementation of the GUTNR subroutine written in Fortran. The subroutine is used to compute the Newton-Raphson solution for gutter or pipe depth, applying different cross-section formulations (trapezoidal, circular, and parabolic channels). It includes initialization, iterative correction for convergence, and final hydraulic calculations.
+
+---
+
+## Subroutine Overview
+The GUTNR subroutine is responsible for:
+- Computing changes in depth based on the Newton-Raphson method.
+- Handling different hydraulic shapes based on the `NPG` parameter.
+- Ensuring convergence through iterative corrections.
+- Adjusting outputs based on flow and depth limits.
+
+Key variables include:
+- `GDEPTH`, `DFULL`: Channel depth parameters.
+- `FLOW0`, `FLOW1`: Flow calculations at the beginning and end of a time period.
+- `DEL`, `DELD`: Delta changes in depth for convergence checks.
+- `AX0`, `WP0`, `RAD`: Cross-sectional area, wetted perimeter, and hydraulic radius.
+
+---
+
+## Detailed Code
+
+<details>
+<summary>View Complete Fortran Code</summary>
+
+```fortran
+            SUBROUTINE GUTNR(J,GLEN,GD,RDELT,NPG,WTYPE,WELEV,WDIS,SPILL,
+        +           GS1,GS2,GWIDTH,GCON,DFULL,QIN,QSUR,GFLOW,OUTFLW,
+        +           AXZERO,AX,FLZERO)
+C     RUNOFF BLOCK
+C     CALLED BY GUTTER NEAR LINE 26
+C=======================================================================               
+C     NEWTON-RAPHSON SOLUTION OF GUTTER OR PIPE DEPTH
+C     LAST UPDATED 4/22/92 BY RED AND WCH.
+C     UPDATED 9/23/93 BY WCH (RED) TO FIX IF-STMT NEAR END.
+C     WCH (CDM), 8/13/96.  REMOVE ERRANT CONVERGENCE CHECK FOR CHANNELS
+C       WITH WEIRS/ORIFICES.  
 C=======================================================================
+            INCLUDE  'TAPES.INC'
+            INCLUDE  'NEW88.INC'
+            DIMENSION NSEQ(4),YZ(4),DZ(4),DY(4)
+            INTEGER   WTYPE
+            DATA NSEQ/1,2,4,8/
+C=======================================================================
+            NUSE     = 4
+            KCHAN(J) = KCHAN(J) + 1
+C=======================================================================
+C     MAIN LOOP
+            DO 400 JJ= 1,NUSE
+            GDEPTH   = GD
+            DELT     = RDELT/FLOAT(NSEQ(JJ))
+            DELD     = 0.0
+            DO 250 K = 1,NSEQ(JJ)
+            GDEPTH   = GDEPTH + DELD
+            IFLG     = 0
+            IFLAG2   = 0
+            DELD     = 0.0
+            D0       = GDEPTH
+            AX0      = 0.0
+            WP0      = 0.001
+C=======================================================================
+C     TRAPEZOIDAL PARAMETERS
+C=======================================================================
+            IF(NPG.EQ.1) THEN
+                  AX0 = 0.5*(GS1+GS2)*D0**2.0 + GWIDTH*D0
+                  WP0 = SQRT(GS1**2.0+1.0)*D0 + SQRT(GS2**2.0+1.0)*D0 + GWIDTH
+                  ENDIF
+C=======================================================================
+C     CIRCULAR PARAMETERS
+C=======================================================================
+            IF(NPG.EQ.2) THEN
+                                     SIN2D0  = 0.5*SIN(2.0*D0)
+                                     AX0     = GWIDTH**2*(D0-SIN2D0)/4.0
+                                     WP0     = GWIDTH*D0
+                                     D1      = 1.5707963
+                                     DELD    = D1 - GDEPTH
+                                     ENDIF
+C=======================================================================
+C     PARABOLIC PARAMETERS
+C=======================================================================
+            IF(NPG.EQ.4.AND.GDEPTH.GT.0.0) THEN
+                                           WIDTH = GWIDTH*SQRT(D0/DFULL)
+                                           X     = WIDTH/2.0
+                                           A2    = GWIDTH**4.0/(64.0*DFULL**2.0)
+                                           WP0   = 8.0*DFULL/GWIDTH**2.0*(X*SQRT(A2+X**2.0) + 
+        +                                       A2*LOG(X+SQRT(A2+X**2.0)) - 
+        +                                       A2*LOG(SQRT(A2)))       
+                                           AX0   = 0.66666667*WIDTH*D0
+                                           ENDIF
+C=======================================================================
+            IF(AX0.LT.0.001) AX0 = 0.0
+            IF(WP0.LE.0.001) WP0 = 0.001
+            RAD                  = AX0/WP0
+C=======================================================================
+            FLOW0 = 0.0
+            IF(WTYPE.EQ.-1.AND.RAD.GT.0.0) FLOW0 = GCON*AX0*RAD**0.666666667
+            IF(WTYPE.EQ.0.AND.D0.GT.WELEV) FLOW0 = WDIS*SPILL*(D0-WELEV)**1.5
+            IF(WTYPE.EQ.1.AND.D0.GT.WELEV) FLOW0 = WDIS*SPILL*(D0-WELEV)**2.5
+            IF(WTYPE.EQ.2.AND.D0.GT.WELEV) FLOW0 = WDIS*SPILL*
+        +                                       (2.0*32.2*(D0-WELEV))**0.5
+            IF(JJ.EQ.1) THEN
+                                    FLZERO = FLOW0
+                                    AXZERO = AX0
+                                    ENDIF
+C=======================================================================
+C     COMPUTE CHANGE IN DEPTH (NEWTON-RAPHSON)
+C
+C     D1 = ESTIMATED FINAL DEPTH.
+C          FOR PIPES, 'DEPTH' IS HALF OF ANGLE SUBTENDED BY
+C          WETTED PERIMETER, IN RADIANS.
+C=======================================================================
+                                                KSOL = 0
+            IF(DELT.GE.900.0) KSOL = 1
+            DO 210 I = 1,20
+            D1       = GDEPTH+DELD
+C=======================================================================
+C     TRAPEZOIDAL CHANNEL
+C=======================================================================
+            IF(NPG.EQ.1) THEN
+                         IF(D1.LE.0.0) THEN
+                                                      IFLAG2 = IFLAG2 + 1
+                                                      D1     = 0.0
+                                                      DELD   =  -GDEPTH
+                                                      ENDIF
+                         DELV = GLEN*DELD * ((GS1+GS2)*(D0 + 0.5 * DELD)
+        +                                         + GWIDTH)/DELT
+                         DDELV = GLEN*((GS1+GS2)*D1  + GWIDTH)/DELT
+                         AX    = 0.5*(GS1+GS2)*D1**2 + GWIDTH*D1
+                         DAX   = (GS1+GS2)*D1+GWIDTH
+                         WP    = SQRT(GS1**2+1.0)*D1+SQRT(GS2**2+1.0)*D1+GWIDTH
+                         DWP   = SQRT(GS1**2+1.0)+SQRT(GS2**2+1.0)
+                         ENDIF
+C=======================================================================
+C     CIRCULAR PIPE
+C=======================================================================
+            IF(NPG.EQ.2) THEN
+                                     IF(I.EQ.1) THEN
+                                                            D1   = 1.5707963
+                                                            DELD = D1 - GDEPTH
+                                                            ENDIF
+                                     IF(D1.LE.0.0) THEN
+                                                                  IFLAG2 = IFLAG2 + 1
+                                                                  D1     = 0.0
+                                                                  DELD   = -GDEPTH
+                                                                  ENDIF
+                                     IF(D1.GT.DFULL) THEN
+                                                                    D1   = DFULL
+                                                                    DELD = D1 - GDEPTH
+                                                                    ENDIF
+                                     SIN2D1 = 0.5*SIN(2.0*D1)
+                                     COS2D1 = COS(2.0*D1)
+                                     DELV   = .25*GLEN*GWIDTH**2*(DELD-SIN2D1+SIN2D0)/DELT
+                                     DDELV  = .25*GLEN*GWIDTH**2*(1.0-COS2D1)/DELT
+                                     AX     = GWIDTH**2*(D1-SIN2D1)/4.0
+                                     DAX    = GWIDTH**2*(1.0-COS2D1)/4.0
+                                     WP     = GWIDTH*D1
+                                     DWP    = GWIDTH
+                                     ENDIF
+C=======================================================================
+C     PARABOLIC CHANNEL
+C=======================================================================
+            IF(NPG.EQ.4) THEN
+                         IF(D1.LE.0.0) THEN
+                                                      IFLAG2 = IFLAG2 + 1
+                                                      D1     = 0.001
+                                                      DELD   =  -GDEPTH + 0.001
+                                                      ENDIF
+                         WID0  = GWIDTH*SQRT(D0/DFULL)
+                         WID1  = GWIDTH*SQRT(D1/DFULL)
+                         DELV  = 0.66666667*GLEN/DELT*(D1*WID1 - D0*WID0)
+                         DDELV = 0.66666667*GLEN/DELT*1.50*WID1
+                         AX    = 0.66666667*WID1*D1
+                         DAX   = 0.66666667*WID1*1.50
+                         X     = WID1/2.0
+                         A2    = GWIDTH**4.0/(64.0*DFULL**2.0)
+                         WP    = 8.0*DFULL/GWIDTH**2.0*(X*SQRT(A2+X**2.0) + 
+        +                              A2*LOG(X+SQRT(A2+X**2.0)) - 
+        +                              A2*LOG(SQRT(A2)))       
+                                                      DX  = 0.0
+                         IF(D1.GT.0.0) DX  = 0.25*GWIDTH/SQRT(D1*DFULL)
+                         DXX   = 0.25*GWIDTH**2.0/DFULL
+                         DWP   = 8.0*DFULL/GWIDTH**2.0*(DX*SQRT(A2+X**2.0) +
+        +               0.5*X*DXX/SQRT(A2+X**2.0) + 
+        +         (DX+0.5*DXX/SQRT(A2+X**2.0))/(LOG(X+SQRT(A2+X**2.0))))
+                         ENDIF
+C=======================================================================
+C     HYDRAULIC RADIUS (ALL CROSS-SECTIONS)
+C=======================================================================
+            IF(AX.LE.0.001) AX = 0.000
+            IF(WP.LE.0.001) WP = 0.001
+            RAD                = AX/WP
+C=======================================================================
+C     FLOW1 = INSTANTANEOUS FLOW AT END OF TIME STEP.
+C=======================================================================
+                                           FLOW1 = 0.0
+            IF(WTYPE.EQ.-1) FLOW1 = GCON*AX*RAD**0.666666667                        
+            IF(WTYPE.EQ.0.AND.D1.GT.WELEV) FLOW1 = WDIS*SPILL*(D1-WELEV)**1.5
+            IF(WTYPE.EQ.1.AND.D1.GT.WELEV) FLOW1 = WDIS*SPILL*(D1-WELEV)**2.5
+            IF(WTYPE.EQ.2.AND.D1.GT.WELEV) FLOW1 = WDIS*SPILL*
+        +                                       (2.0*32.2*(D1-WELEV))**0.5
+            FLOW   = 0.5*(FLOW1+FLOW0)
+            DFLOW  = 0.0
+            IF(WTYPE.EQ.-1) DFLOW =  0.5*GCON*(1.6666667*(RAD**0.66666667)
+        +                         *DAX - 0.66666667*(RAD**1.6666667)*DWP)
+            IF(WTYPE.EQ.0.AND.D1.GT.WELEV) DFLOW = 1.5*WDIS*SPILL*
+        +                                       (D1-WELEV)**0.5
+            IF(WTYPE.EQ.1.AND.D1.GT.WELEV) DFLOW = 2.5*WDIS*SPILL*
+        +                                       (D1-WELEV)**1.5
+            IF(WTYPE.EQ.2.AND.D1.GT.WELEV) DFLOW = 32.2*WDIS*SPILL/
+        +                                       (64.4*(D1-WELEV))**0.5
+C=======================================================================
+C     NEWTON-RAPHSON CORRECTION (ALL CROSS-SECTIONS)
+C=======================================================================
+            IF(KSOL.EQ.0) THEN
+C$$$  WCH THINKS SHOULD DIVIDE BY RDELT (CONST DT), NOT DELT (VARIABLE DT)
+C$$$  TRY CORRECTION 4/20/92
+                                      F     = DELV  + FLOW
       DO 400 JJ= 1,NUSE
       GDEPTH   = GD
       DELT     = RDELT/FLOAT(NSEQ(JJ))

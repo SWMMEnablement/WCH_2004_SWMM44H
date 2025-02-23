@@ -6,6 +6,25 @@ CIMT  change dimensions from 10 to MQUAL
      1             KODEX*10,KODER*10,KUNC1*10,KUNC2*10
       COMMON/COLL1/IPOLLU 
 	  COMMON/COLL2/CPOLL(MQUAL,NIE),POLL1(MQUAL,NIE),
+/**
+ * Function Invocation Sequence:
+ *   This block of code calls three functions:
+ *     - POLL2(MQUAL, NIE)
+ *     - POLL3(MQUAL, NIE)
+ *     - POLD1(MQUAL, NIE)
+ *
+ * Parameter Description:
+ *   - MQUAL: Likely represents a measurement or quality metric.
+ *   - NIE: Possibly a flag or a specific parameter value used consistently.
+ *
+ * Usage Notes:
+ *   - These functions are executed in order, each using the same pair of parameters.
+ *   - Ensure that both MQUAL and NIE are correctly defined and initialized in the codebase before these calls.
+ *
+ * File Context:
+ *   - The code snippet originates from a documentation file located at:
+ *     /C:/Users/dickinro/OneDrive - Autodesk/Documents/WCH_2004_SWMM44H/WCH_2004/COMB.md
+ */
      1             POLL2(MQUAL,NIE),POLL3(MQUAL,NIE),POLD1(MQUAL,NIE),
      2             POLD2(MQUAL,NIE),QO1(NIE),QO2(NIE),QO3(NIE),
      3             QQO(NIE),QOLD1(NIE),QOLD2(NIE),TDIF1(NIE),TDIF2(NIE)

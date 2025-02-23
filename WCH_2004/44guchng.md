@@ -1,11 +1,74 @@
-This file documents changes made to swmm44gu by Wayne Huber or others 
-since its first release on September 28, 1999.
+# This file documents changes made to swmm44gu by Wayne Huber or others 
+# since its first release on September 28, 1999.
 
 WCH = Wayne Huber
 RED = Robert Dickinson
 CIM = Chuck Moore
 MCH = Mitch Heineman
 LR  = Lew Rossman
+
+# SWMM44GU Changelog Document
+
+This document details the evolution of the SWMM44GU code since its initial release on September 28, 1999. Over the years, numerous modifications have been made by various contributors to improve functionality, correctness, computational precision, and compatibility with additional features (including metric conversions, interface flexibility, and error handling).
+
+## Authors and Contributors
+
+- **WCH**: Wayne Huber
+- **RED**: Robert Dickinson
+- **CIM**: Chuck Moore
+- **MCH**: Mitch Heineman
+- **LR  = Lew Rossman
+
+## Summary of Changes
+
+1. **Initial Corrections and Adjustments**  
+    - Early modifications rectified formatting issues, adjusted statements, and fixed errors in subroutines (e.g., Yroute corrections and format changes) to enhance code operation.
+
+2. **Subroutine Enhancements**  
+    - Revisions to subroutines such as `CATCH`, `GETCUR`, `GROUND`, and `GUTNR` were implemented to refine error checking, improve loop logic, and ensure proper handling of numerical edge cases. 
+    - Added checks (or removed them when unnecessary) to handle operations like raising zero to a power, protecting against runtime errors.
+
+3. **Improved Input/Output and User Interaction**  
+    - Updates were made to input routines (e.g., INDAT1, INDAT2) to handle optional parameters and support new kinds of data (like pump on/off options).
+    - Enhancements in output routines (as seen in OUTPUT.FOR) address issues like NAN results, layout correction, and inclusion of extra summary details for clarity in printouts.
+
+4. **Metric and Unit Conversions**  
+    - As the tool evolved, metric conversion became a key focus. Several changes ensure correct unit conversions—especially in subroutines involving rainfall, channel geometry, and groundwater computations.
+    - Changes include corrections in the calculation of flow and adjustments using updated conversion factors.
+
+5. **Interface and Formatting Improvements**  
+    - Error messages were augmented and adjusted (e.g., concerning incompatible alphanumeric options) to help users identify input mistakes.
+    - Uniform default starting dates and other formatting tweaks were introduced to maintain consistency across different simulation blocks.
+
+6. **Additional Functionalities**  
+    - New options were added to support overland flow quantity and quality routing between channels and landscapes.
+    - Further modifications allow for detailed spatial weighting and the inclusion of new features like statistical output for transport subroutines.
+
+7. **Bug Fixes and Stability Enhancements**  
+    - Numerous bugs—from subscript errors to logical flaws in summations and indexing—were fixed throughout the document’s change items.
+    - Corrections ensure proper handling of multiple rain gages, consistent variable usage, and stable execution even for complex model configurations.
+
+8. **Backward Compatibility and Legacy Updates**  
+    - Many changes were made while retaining backwards compatibility with earlier versions.
+    - Adjustments include reinstating certain options and reordering code segments to support legacy input formats while introducing new capabilities.
+
+## Detailed Change History
+
+The file contains a numbered list of 112 change items detailing:
+
+- Specific corrections in subroutine operations (e.g., in GETCUR, INDAT1, RDIIRES).
+- Format updates for improved data presentation (e.g., revised field widths, adjusted output formats).
+- Extended capabilities including:
+  - Enhanced error reporting (with detailed messages for users).
+  - Additional functionalities in overland and channel routing.
+  - New subroutines and updates to existing ones to address evolving simulation requirements.
+  
+Highlights include early fixes addressing basic errors, mid-term refinements enhancing the user interface and metric conversions, and later additions that improve simulation accuracy, performance, and stability for both hydraulic and quality routing.
+
+## Modified Selection Placeholder
+
+The modified selection placeholder now reads as follows:
+
 
 1. 10/11/99, C. Moore.  Yroute: Correct C. Moore correction at line 118 
 to make akon = -1.0000001

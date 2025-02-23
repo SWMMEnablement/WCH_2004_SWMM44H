@@ -11,7 +11,114 @@ C     CIM, 9/8/00.  Add option for detailed calculation of irregular
 C                   sections.
 C=======================================================================
       INCLUDE 'TAPES.INC'
-      INCLUDE 'TABLES.INC'
+      # Fortran Function DEPTH Summary
+
+      This markdown provides a complete summary of the Fortran code in the file. The function `DEPTH(ALPHA)` computes the normalized depth in various conduit configurations based on the normalized area (`ALPHA`). Below is an extensive overview of the code structure and its functionality.
+
+      ---
+
+      ## 1. Overview
+
+      - **Purpose:**  
+            Computes the normalized depth for a conduit system based on the normalized area, with specific handling for different conduit types and configurations.
+
+      - **Usage Context:**  
+            Part of a broader hydraulic model/material, the function is used to relate the cross-sectional area properties to the depth of flow.
+
+      ---
+
+      ## 2. File Structure and Includes
+
+      The file makes use of several include files to import common parameters and subroutines:
+
+      - `TAPES.INC`
+      - `HUGO.INC`
+      - `NEW81.INC`
+      - `FLODAT.INC`
+      - `NEWTR.INC`
+      - `TABLES.INC` *(as provided in the selection placeholder)*
+
+      These include files likely contain variable declarations, additional subroutines (for example, a routine called `CIRCLE`), and definitions for arrays (like `DNORM`, `ANORM`, and `QCURVE`) that are referenced throughout the function.
+
+      ---
+
+      ## 3. Function Description
+
+      ### 3.1 Input Parameters
+
+      - **ALPHA:**  
+            The normalized cross-sectional area used to determine the flow depth.
+
+      - **Global variables/constants:**  
+            Variables like `NTYPE`, `KDEPTH`, and several geometry and flow parameters (`GEOM1`, `GEOM2`, `GEOM3`, `P2`, `P5`, `P6`, `DIST`, etc.) are used. Arrays such as `DNORM` and `ANORM` store tabulated functions for interpolation.
+
+      ### 3.2 Algorithm Breakdown
+
+      #### A. Early Returns
+      - **Rectangular Conduit:**  
+            When the conduit type indicates a rectangular channel (or when `ALPHA` equals 0.0), the function returns `ALPHA` directly as the depth.
+            
+      - **Tabular D-A Curve & Branching by NTPE Type:**  
+            - The function distinguishes between several conduit types using `NTPE` (element type) and `KDEPTH` (depth computation method flag).  
+            - If `KDEPTH` is 2, then the code applies different logic for:
+                  - **Parabolic/Power/Irregular Corridors (NTPE 16):**  
+                        Uses interpolation over tabulated values for `QCURVE` or, in detailed cases, `QCURV2`. The interpolation index `I` is computed using `ALPHA` increments (0.04 or 0.0016).
+                  - **Non-Circular or Circular with Large Depths:**  
+                        Interpolates using normalized depth arrays (`DNORM` and `ANORM`).  
+                        For low flows (`ALPHA < 0.04`), a parabolic correction improves the depth estimate with a second-order interpolation term.
+
+      #### B. Special Cases for High Accuracy and Functional Forms
+
+      - **CIRCULAR Sections (High Accuracy at Low Flows):**  
+            Uses a dedicated routine (`CIRCLE`) to compute the depth for low flow conditions.
+
+      - **Modified Basket-Handle Conduit (NTPE EQ 10):**  
+            Converts normalized area to actual area and computes the depth using a different functional form, with checks to avoid exceeding geometry limits.
+
+      - **Rectangular, Triangular Bottom (NTPE EQ 11):**  
+            Implements the functional form taking into account area surplus relative to a triangular section.
+
+      - **Rectangular, Round Bottom (NTPE EQ 12):**  
+            Uses two different methods depending on area thresholds.  
+            For lower areas, it calls the `CIRCLE` routine; for larger areas, it applies an interpolation with adjustments based on geometric scaling.
+
+      - **Trapezoid Section (NTPE EQ 13):**  
+            Computes depth through an inverted quadratic relation considering the trapezoidal geometry.
+
+      ---
+
+      ## 4. Interpolation Details
+
+      - **Linear and Parabolic Interpolation:**  
+            The code uses simple linear interpolation between tabulated values and enhances the estimate via a parabolic correction in some cases.
+            
+      - **Index Handling:**  
+            Special care is taken for the index calculations to avoid out-of-bound errors (e.g., ensuring `I` remains within valid limits).
+
+      - **Floating Point Adjustments:**  
+            Many divisions and multiplications aim to convert normalized values into actual flow-depth measurements using the geometric properties of the conduit (variables like `AFULL`, `GEOM1`, `GEOM2`, `GEOM3`, etc.).
+
+      ---
+
+      ## 5. Summary
+
+      - The function is organized into multiple conditional branches to handle different types of conduits and flow regimes.
+      - Early exits simplify cases where the normalized area directly defines the depth, whereas more complex conduit shapes require detailed interpolation and geometric adjustments.
+      - Code readability is enhanced with extensive comments and inline modifications (noted by identifiers like `CIM###` and `C####`), tracing the evolution of the algorithm over time.
+
+      ---
+
+      ## 6. Additional Notes
+
+      - **Maintainability:**  
+            The use of include files (`TABLES.INC` among others) aids modularity. Any changes to the geometric or flow parameters can be maintained separately.
+            
+      - **Historical Context:**  
+            The comments indicate revisions and enhancements over many years, with contributions by several authors (e.g., RED, WCH, CIM).
+
+      - **Extensibility:**  
+            The structure allows the addition of more conduit types by extending the conditional branches.
+
       INCLUDE 'HUGO.INC'
       INCLUDE 'NEW81.INC'
       INCLUDE 'FLODAT.INC'

@@ -48,7 +48,210 @@ This document provides an extensive overview of the Fortran subroutine `COMBIN` 
 ### 2. Data Initialization
 
 - **Pollutant and Node Data:**  
-      Arrays for pollutants (e.g., `POLL1`, `POLL2`, `CPOLL`) and node numbers (e.g., `NLOC`, `JUNC1`, `JUNC2`) are initialized.  
+      # COMBIN Subroutine: Comprehensive Markdown Documentation
+
+      This document provides an extensive summary of the Fortran subroutine `COMBIN`. The subroutine is designed to process water quality interface files by either collating information from two input files or by combining flows and pollutant loads. It also supports extraction and reformatting operations.
+
+      ---
+
+      ## Overview
+
+      - **Purpose:**  
+            - To combine or collate data from water quality interface files.
+            - To extract and optionally renumber nodes from a single interface file.
+            - To create an ASCII file from a binary interface file.
+            - To perform summation calculations on various water quality indicators.
+
+      - **Options (ICOMB values):**  
+            - **0** – Collate: Interleaves data from two files (matching inlet nodes are added).
+            - **1** – Combine: Sums flows and pollutant loads from all inlets into one output.
+            - **2** – Extract: Extracts nodes from one file and optionally renumbers them.
+            - **3** – File Reader: Reads the file header only.
+            - **4** – ASCII File Creator: Creates an ASCII file from a binary interface file.
+            - **5, 6, 7** – Summation Options: Include various rain block summations and ASCII file creation operations.
+            - **8, 9** – Specialized Summations for temperature and other attributes.
+
+      - **History:**  
+            - Original subroutine written in June 1988.
+            - Updated multiple times with enhancements, improvements in error handling, integration of alphanumeric labels, and additional functionality through the early 1990s up to 2006.
+
+      ---
+
+      ## File Structure & Key Components
+
+      ### 1. Header and Initial Comments
+
+      The file begins with header comments including revision history, which note contributions by R. Dickinson, R.E.D., Laura Terrell, and later contributors. These comments explain the purpose, updates, error handling, and additional features.
+
+      ### 2. Included Files and Variable Declarations
+
+      - **Included Files:**  
+            - `TAPES.INC`
+            - `INTER.INC`
+            - `STIMER.INC`
+            - `COMB.INC`
+
+      - **Variable Declarations:**  
+            - Various character, integer, logical, and (in some cases) double precision variables.
+            - Key variables include file handle pointers, time difference indicators, and arrays for pollutant loads and node numbers.
+
+      ### 3. File Operations
+
+      - **Opening Files:**  
+            There is conditional logic to open files based on whether they are temporary (`SCRATCH`) or known filenames.  
+            - Special handling is implemented for formatted versus unformatted files.
+            
+      - **Error Checks:**  
+            - The code performs runtime error checks ensuring valid file streams and proper input parameters.
+            - Calls to the `CALL ERROR` routine are used when an unexpected state is encountered.
+
+      ### 4. Data Initialization
+
+      - **Pollutant and Node Data:**  
+            - Arrays for storing pollutant values (`POLL1`, `POLL2`, etc.) and node information (`NLOC`, `JUNC1`, `JUNC2`, or alphanumeric versions) are initialized.
+            - Default settings for output options (such as printing concentrations instead of loads) are configured.
+
+      - **User Inputs:**  
+            - Data groups include settings such as `ICOMB`, titles, node identifiers, and pollutant mapping information.
+            - Two modes are distinguished for alphanumeric versus numeric input of node numbers.
+
+      ---
+
+      ## Detailed Data Processing
+
+      ### 1. Reading Input Data Groups
+
+      - **Group A1 (General Controls):**  
+            Reads fundamental control inputs such as `ICOMB` (the operation mode) and a common control card (`CC`).
+
+      - **Groups B1 & B2 (File Headers):**  
+            - Reads title lines for inclusion in the output.
+            - Receives the node number/name for the output file and the number of pollutants (`NPOLL`).
+            - Handles the sign of `NPOLL` to determine whether to output concentrations or loads.
+
+      - **Group B3 (Pollutant Mapping):**  
+            - Maps the positions of quality constituents from the input files.
+            - Writes a summary of the mapping to the output log.
+
+      - **Groups C1 – C3 (Node Extraction and Renumbering):**  
+            - Reads the node identifiers for extraction (and possible renumbering).
+            - Contains separate branches for numeric and alphanumeric treatment of node numbers.
+            - Validates that at least one node is selected when using the extraction option.
+
+      ### 2. Processing Options
+
+      - **Extract Option (ICOMB = 2):**  
+            - Calls routines to transfer node data from the source file to a new file.
+            - Implements node renumbering logic.
+
+      - **File Reader Option (ICOMB = 3) and ASCII File Creation (ICOMB = 4):**  
+            - For these options, the subroutine simply reads input headers or writes an ASCII version of the data and then exits.
+
+      - **Combine (ICOMB = 1) vs. Collate (ICOMB = 0):**  
+            - **Collate:**  
+                  - Identifies common nodes between two files.
+                  - Interleaves data by matching corresponding node locations; values from matching nodes are summed.
+            - **Combine:**  
+                  - Sums values from all nodes irrespective of location.
+                  - Uses a default output node if none is provided.
+            
+            - A key section of the subroutine processes the two input files by:
+                  - Reading the first record from each file.
+                  - Synchronizing time and adjusting for time differences (using linear interpolation if necessary).
+                  - Maintaining arrays (`QO1`, `QO2`, and `CPOLL`) for water quality flows and pollutant loads.
+
+      ### 3. Time Synchronization and Interpolation
+
+      - **Time Variables:**  
+            - Variables such as `JDAY`, `TIMDAY`, `DELT`, and associated interpolated copies are used to track time.
+            - The process involves calculating the difference between the two read times.
+            
+      - **Interpolation Logic:**  
+            - When the files are not perfectly synchronized, a linear interpolation is applied to either adjust values forward or backward in time.
+            - The variable `ILAG` is used to flag whether file 2’s time is ahead of or behind file 1’s time.
+            
+      - **Handling Edge Cases:**  
+            - Special conditions handle when the time difference is zero, ensuring proper propagation of values between successive reads.
+
+      ### 4. Combining/Collating Data
+
+      - **Creating the New Interface Stream:**  
+            - After processing header and data records, the subroutine assembles a new output file.
+            - **For ICOMB = 1 (Combine):**  
+                  - Sums all flows and pollutant loads into a single output location.
+            - **For ICOMB = 0 (Collate):**  
+                  - First, common nodes (present in both files) are identified and summed.
+                  - Remaining nodes unique to either file are appended in order.
+            
+      - **Use of Helper Arrays:**  
+            - Arrays such as `INPOS1`, `INPOS2`, and `JCOMB` track the positions of nodes in the input files versus their placement in the new interface file.
+
+      ### 5. Output Generation
+
+      - **Writing Data Output:**  
+            - After all processing, the new interface data is written out.
+            - FORMAT statements are used to ensure the output is human-readable and consistent.
+            - Output routines (`CALL INFACE`) are called twice: first to write header information, then to write the actual data rows.
+            
+      - **Errors and Finalization:**  
+            - The subroutine contains fallback routines for error states (e.g., missing node information, mismatched input formats).
+            - When the end-of-file is reached for either input file, the subroutine cleans up and writes final messages.
+
+      ---
+
+      ## Format Statements
+
+      The file defines several FORMAT statements to manage how the following are printed:
+      - **General Formatting:**  
+            - Status and notification messages.
+            - Headers for the output file.
+      - **Data Layout:**  
+            - Specific formats for printing node numbers, quality values, and flow data.
+      - **Error Messages:**  
+            - Detailed error messages that guide users about the nature of the input problems.
+
+      ---
+
+      ## Summary
+
+      The `COMBIN` subroutine is a robust utility for water quality data management. It:
+      - **Handles multiple operations:** Combine, collate, extract, read, and create ASCII interfaces.
+      - **Incorporates error checking:** Ensuring valid file operations and input data integrity.
+      - **Synchronizes time series data:** Uses interpolation to handle disparate record times.
+      - **Integrates flexibility:** Supports numeric and alphanumeric node labels for modern data usage.
+      - **Produces formatted output:** Utilizes extensive FORMAT statements for clear, accessible outputs.
+
+      This detailed summary serves as comprehensive documentation for developers working with the Fortran subroutine. It elaborates on both the high-level functionality and the lower-level operational logic inherent to the program.
+
+      ---
+
+      ## Code Overview
+
+      Below is an excerpt demonstrating how the subroutine begins its execution:
+
+      ```fortran
+                        SUBROUTINE COMBIN
+      C     COMBINE BLOCK
+      C=======================================================================
+      C     Rewritten   June 1988 by R. Dickinson
+      C     Updated      May 1989 by R.E.D.
+      C     Updated November 1990 by Laura Terrell, CDM
+      ...
+                        INCLUDE 'TAPES.INC'
+                        INCLUDE 'INTER.INC'
+                        INCLUDE 'STIMER.INC'
+                        INCLUDE 'COMB.INC'
+      ...
+                        READ(N5,*,ERR=888) CC,ICOMB
+                        WRITE(N6,71) ICOMB
+      ...
+      ```
+
+      This snippet highlights the inclusion of common libraries, revision history, and initial control flow. The full file follows a similar pattern of defined sections, reading input groups, initializing variables, processing data, and finally writing output.
+
+      ---
+
+      This markdown summary aims to serve both as an extensive explanation of the file’s structure and a reference guide for maintaining and extending the subroutine.`JUNC2`) are initialized.  
 - **Default Settings:**  
       Variables such as `IPOLLU` (to determine concentration vs. load outputs) are set according to input values.  
 - **Error Checks:**  

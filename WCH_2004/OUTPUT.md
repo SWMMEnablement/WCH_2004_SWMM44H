@@ -30,7 +30,88 @@ C=======================================================================
      +          PSF(NPO,2)
 Cwch, 2/9/01.  Add VER5
       CHARACTER TP*1,VER1*10,VER2*10,VER3*10,VER4*10,VER5*10,
-     +               YER1*10,YER2*10,YER3*10,YER4*10,BMJ*10
+    # Subroutine OUTPUT – Comprehensive Summary
+
+    This Fortran subroutine (`OUTPUT`) is responsible for printing output and managing the printer and plotting routines in a hydrologic simulation model. It has evolved over many years, with updates from multiple authors to accommodate changes in metric conversions, junction flow analysis, and display formatting.
+
+    ## Key Features
+
+    - **Purpose and Scope:**  
+        - Prints detailed simulation output including junction inflows/outflows, continuity summaries, and conduit flow statistics.
+        - Controls printer output and plotting routines with both textual and graphical presentations.
+
+    - **Historical Modifications:**  
+        - Updated to correct metric calculations (e.g., converting depth/diameter from feet to meters).
+        - Adjustments made to avoid printing insignificant flow values.
+        - Enhancements for junction and conduit statistics and improved continuity error reporting.
+
+    - **Included Files:**  
+        The subroutine relies on several included source files (e.g., `TAPES.INC`, `STIMER.INC`, `CONTR.INC`, etc.) which supply declarations and supplementary logic required across different simulation modules.
+
+    ## Data Structures and Definitions
+
+    - **Array Declarations:**  
+        - Arrays such as `FMAX`, `FMEAN`, `FMIN`, and similar for other flow and grade components are dimensioned with prescribed simulation parameters like `NPO` and `NJ`.
+        
+    - **Character Variables:**  
+        - Several character variables (e.g., `TP`, `VER1` to `VER5`, and `YER1` to `YER4`) store formatting strings used in the outputs. These help in specifying units (CFS, M/S, etc.) and labels for printed reports.
+
+    - **Flow and Volume Calculations:**  
+        - The subroutine calculates cumulative flows and continuity error percentages.
+        - Alternative calculations are performed to track final volume by summing individual junction volumes, ensuring integrity in the simulation output.
+
+    ## Processing Flow
+
+    1. **Junction Inflow and Outflow Reporting:**  
+         - The subroutine iterates through junctions, printing inflow and outflow details.  
+         - Special conditions are checked (e.g., negative outflow detection) to trigger additional warnings.
+
+    2. **Continuity Summary and Error Calculation:**  
+         - Summations of initial volume, inflow, and outflow allow for calculating the continuity error percentage.
+         - The results are printed both to the report file and optionally to the console.
+
+    3. **Printing Detailed Statistics:**  
+         - Subsequent sections focus on:
+             - **Junction Statistics:**  
+                 Providing elevation, depth, and flooding warnings. Special symbols (e.g., asterisk, pound, dollar) denote specific conditions like surface flooding or interface inflows.
+             - **Conduit Statistics:**  
+                 Reporting on design flow, velocity calculations, and conduit conditions (e.g., maximum flow, flow ratio, etc.).
+             - **Flow and Velocity History:**  
+                 Offers time history data on flow and velocity with comprehensive formatting, supporting both US customary and metric units.
+                 
+    4. **Plotting Routines:**  
+         - Plot titles, legends, and axis labels are defined.
+         - The routine invokes plotting subroutines to render junction elevation and conduit flow graphs.
+         - Special handling of water surface slopes and junction flood warnings is included.
+
+    5. **Format Statements:**  
+         - Numerous FORMAT statements dictate the layout of printed data.  
+         - Formats vary based on output requirements (e.g., number of characters, precision, and alignment) for different sections (junction summaries, conduit details, flow history, etc.).
+
+    ## Overall Structure
+
+    - **Initialization and Declarations:**  
+        Initializes arrays and includes files that define simulation constants and parameters.
+
+    - **Data Output Sections:**  
+        Segmented into multiple parts:
+        - **Junction Inflows/Outflows**
+        - **Continuity Checks and Summary**
+        - **Detailed Statistical Reporting (both for junctions and conduits)**
+        - **Graphical Plotting Commands**
+
+    - **User Guidance:**  
+        - Embedded warnings and notes advise users to adjust channel specifications to mitigate full flow warnings, enhancing simulation accuracy.
+
+    ## Conclusion
+
+    The subroutine `OUTPUT` plays a critical role in generating extensive, formatted report outputs for hydrologic simulations. It provides:
+    - Detailed statistical analyses of junction and conduit behavior.
+    - Graphical visualization for key parameters.
+    - Robust handling of both metric and US customary units.
+
+    This comprehensive summary provides an extensive overview of the subroutine's purpose, internal processing, and output formatting—offering clear insights into the simulation output generation for enhanced troubleshooting and model refinement.
+ YER1*10,YER2*10,YER3*10,YER4*10,BMJ*10
       CHARACTER ASTER*1,XID*1,POUND*1,DOLLAR*1
       DATA VER1/' CONDUIT  '/,VER2/' FLOW IN  '/,VER3/'   CFS    ' /,
      +     VER4/'  CU M/S  '/,VER5/' SLOPE(%) ' /

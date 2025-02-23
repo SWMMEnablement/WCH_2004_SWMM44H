@@ -19,8 +19,30 @@ CIMT change dimensions from 10 to MQUAL, and 11 to MQUAL+1
 C#### WCH, 7/25/96.
       CHARACTER*128 NEWFIL
 cred  up the number of rainfall stations to 2000 from 10 - 6/22/01
-      CHARACTER JOHNNY*10,NOTED(3)*10,MOTED(3)*10
-      DATA NOTED/'  Pounds  ',' Quantity ',' Unit*cf  '/
+    ## Fortran Array Definitions and Data Initialization
+
+    This section defines character arrays for output labeling and initializes one of them with descriptive headers.
+
+    ### Array Declarations
+
+    - **JOHNNY**: A character array of length 10 (e.g., used for junction or identifier names).
+    - **NOTED**: An array with 3 elements, each a character string of length 10, which will hold column headers for numerical data.
+    - **MOTED**: Similarly, an array with 3 elements of length 10, likely reserved for unit or additional descriptions.
+
+    ### Data Initialization
+
+    The `DATA` statement initializes the `NOTED` array with the following header values:
+    - **'  Pounds  '**: Indicates weight in pounds.
+    - **' Quantity '**: Represents a numerical quantity.
+    - **' Unit*cf  '**: Specifies measurement in terms of units times cubic feet.
+
+    ### Purpose in the Code
+
+    - **Documentation**: These definitions help label output data in simulation reports.
+    - **Formatting**: By providing clear column headers, later parts of the program can reference these arrays to print formatted summaries.
+    - **Legacy Fortran Style**: The use of fixed-length character arrays and explicit data statements reflects common practices in older Fortran code, ensuring consistency in output formatting across different parts of the simulation program.
+
+    This comprehensive markdown summary encapsulates both the functional and stylistic aspects of the original Fortran code snippet.
 C#### WCH, 11/30/93.  CHANGE TO:             Unit*cum and Unit*cf.
       DATA MOTED/' Kilograms',' Quantity ',' Unit*cum '/
       DATA JOHNNY/' ---------'/

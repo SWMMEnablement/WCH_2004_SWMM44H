@@ -20,7 +20,138 @@ C      CHANNEL ROUGHNESS.  CHANGE IF STATEMENT TO STRICTLY LT AND GT.
 C     MODIFIED BY WCH, 8/25/94.  ANOTHER CORRECTION FOR CASE WHEN
 C      VERTICAL WALL OCCURS AT ROUGHNESS TRANSITION.
 C     RED, 12/16/94.  CORRECTION FOR POWER FUNCTION CHANNELS FOR
-C      INTERMEDIATE SLICE (2-26) AREA CALCULATIONS.
+# GETCUR Fortran Subroutine – Complete Markdown Summary
+
+This document provides a comprehensive summary of a legacy Fortran subroutine called `GETCUR`, which is used for processing channel cross-sectional data in hydraulic modeling. The code handles both natural channels and power function channels, reading input data, performing computations, error checking, and printing formatted output.
+
+---
+
+## Overview
+
+- **Purpose:**  
+      The `GETCUR` subroutine reads cross-section data (from Extran or Transport blocks), calculates hydraulic parameters, establishes normalized flow/area curves, and prints both channel and conduit information.
+
+- **History & Modifications:**  
+      - Originally developed by A.C. Rowney in 1986.
+      - Updated by various authors (Swanson, Dickinson, Huber, WCH, RED, CIM) over years.
+      - Historical comments note adjustments (e.g., Manning’s n, vertical cross-section corrections, power function channel enhancements).
+
+---
+
+## Code Structure & Main Components
+
+### 1. File Inclusions
+The subroutine includes several common blocks and configuration files:
+- `TAPES.INC`
+- `FLODAT.INC`
+- `BALINES.INC`
+- `NEWTR.INC`
+
+These files provide shared variables and configuration constants used throughout the subroutine.
+
+---
+
+### 2. Data Input and Variable Initialization
+
+- **Parameters and Dimensions:**  
+      A parameter (`NXSPTS`) limits the maximum number of cross-section points (set to 100). The array `ELSTA(2, NXSPTS)` stores station data.
+
+- **Variables:**  
+      Variables such as `JNO`, `XFROM`, `SLOPE`, `METRIC`, `KNORM`, and `KCOND` control the behavior:
+      - `KNORM`: Determines if conversion is for Extran (0) or Transport (1).
+      - `KCOND`: Represents if natural cross section data is used (`0`) or if the channel is a power function channel (`1`).
+
+- **Default Values and Adjustments:**  
+      - For error prevention, if `SLOPE` is less than or equal to zero, it defaults to 0.01.
+      - Other variables such as `NUMST`, `PXSECR`, and arrays like `QCURVE` are initialized.
+
+---
+
+### 3. Reading Cross-Section Data
+
+- **Logic Flow:**  
+      The code reads through a loop (maximum iterations reduced from 100000 to 2200) to locate the specified cross-section ID (`XFROM`). It uses several file commands:
+      - `READ`, `BACKSPACE`, and error handling (`ERR=888`, `END=9000`).
+
+- **Handling Different Cards:**  
+      Depending on card type read (`D1`, `NC`, `C2`, `E2`, `X1`, `C3`, `E3`), the subroutine adjusts its behavior:
+      - When encountering card types for adjustment (`C3`, `C4`), the subroutine may backtrack in the file stream.
+      - Error messages are produced if a cross-section is not found or if stations are in the wrong order.
+
+- **Error Handling:**  
+      Labeled sections (e.g., `9000` and `9020`) generate error messages if data is missing or misordered.
+
+---
+
+### 4. Processing Channel Sections
+
+- **Natural vs. Power Function Channels:**
+      - **Natural Channels (KCOND = 0):**  
+            After data input, subroutine calls perform normalization, hydraulic radius calculation, and error checking.  
+            - Calls the helper subroutine `IRRSECT` to compute area, radius, and top width.
+            - Uses iterative loops for detailed calculations (e.g., using a linear interpolation for 1/25 of a full cross-section).
+
+      - **Power Function Channels (KCOND = 1):**  
+            The code bypasses the natural channel processing and branches directly to section 6666.
+            - A loop computes parameters (depth, wetted perimeter, area, top width) using a separate method (`POWER` subroutine call).
+            - Adjusts production of secondary detailed outputs if required by additional flags (`IDETAIL`).
+
+- **Normalization Process:**  
+      Regardless of channel type, the subroutine uses normalization to scale:
+      - Hydraulic radius.
+      - Cross-sectional area (by dividing with full cross-section area `AFULL`).
+      - Top width and flow (depending on the normalization flag `KNORM`).
+
+---
+
+### 5. Additional Calculations & Subroutine Calls
+
+- **Subroutine Calls:**
+      - `IRRSECT`: For computing irregular channel section properties.
+      - `POWER`: For calculating parameters in power function channels.
+      - `TRANNORM`: Normalizes the channels for Transport if needed.
+      - `CHECKSTCH`: Verifies that specific station points match the computed cross-section.
+
+- **Error and Warning Messages:**  
+      Various formatted `WRITE` statements (using format labels such as `1690`, `1700`, `2700`, etc.) are employed to output information and warnings regarding hydraulic parameters. These outputs include:
+      - Channel length, elevation, maximum depth, and Manning's n.
+      - Normalized dimensionless curves printed in tabulated forms.
+
+- **Tolerance Checks:**  
+      The subroutine includes checks for small differences in computed length versus input (`XLEN` compared to `XLENIN`) and terminates or issues warnings if discrepancies exceed 1%.
+
+---
+
+### 6. Output Generation
+
+- **Formatted Output:**  
+      The subroutine uses a series of formatted `WRITE` statements to print detailed information:
+      - **For Natural Channels:**  
+            A section prints natural cross-section curves and dimensionless parameters normalized by depth or area.
+      - **For Power Function Channels:**  
+            Additional details such as the channel exponent, computed flow rate, and hybrid methodology are displayed.
+      
+- **Final Section:**  
+      After normalization, the computed curves are printed iteratively for a set number of stations. The last point is forced to zero to assist in proper formatting in the printing routine.
+
+- **Error Reporting Labels:**  
+      Specific error messages (using format labels such as `9000`, `9020`, etc.) notify the user if there is an error in input data or processing order.
+
+---
+
+## Summary
+
+The `GETCUR` subroutine in Fortran is responsible for:
+
+- Reading and verifying input data for channel cross-sections.
+- Handling both natural and power function channels through conditional branching.
+- Computing key hydraulic parameters (area, top width, hydraulic radius, flow).
+- Normalizing calculations to be independent of the measurement system (U.S. customary or metric).
+- Invoking helper subroutines for detailed section calculations and normalization.
+- Producing detailed formatted output and error messages that assist in debugging and validating input data.
+
+This extensive summary encapsulates the structure, logic, and critical functions of the `GETCUR` subroutine, making it easier to understand its role within the larger hydraulic modeling system.
+(2-26) AREA CALCULATIONS.
 C     WCH, 2/7/95.  OPTION TO INCREASE NUMBER OF ALLOWABLE CROSS SECTION
 c      POINTS WITH PARAMETER STATEMENT.  LEAVE AT 100 FOR NOW.
 C     CIM, 9/8/00.  Major changes for option of adding additional

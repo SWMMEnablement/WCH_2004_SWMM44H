@@ -24,7 +24,320 @@ C     IDO   = 1 READ STATION DATA
 C=======================================================================
       INCLUDE 'TAPES.INC'
       INCLUDE 'TEW.INC'
-      INTEGER  DAY,YEAR,STA,FF(8),IVALUE(31)
+      # GTCOLD Fortran Routine Documentation
+
+      # GTCOLD Fortran Subroutine Documentation
+
+      This document provides a complete technical description and documentation for the GTCOLD Fortran subroutine. It covers an overview of the subroutine, technical details including code fragments, variable declarations, control flow, and error handling. Supporting materials such as a table of contents, collapsible sections, and reference-style links are included to maintain a clear and precise technical record.
+
+      ---
+
+      ## Table of Contents
+
+      1. [Introduction](#introduction)
+      2. [Subroutine Overview](#subroutine-overview)
+            - [Purpose and Functionality](#purpose-and-functionality)
+            - [Code Structure](#code-structure)
+      3. [Technical Details](#technical-details)
+            - [Variable Declarations](#variable-declarations)
+            - [Control Flow & Logic](#control-flow--logic)
+            - [Error Handling](#error-handling)
+      4. [Code Listings](#code-listings)
+            - [Fortran Routine Header](#fortran-routine-header)
+            - [Key Code Fragments](#key-code-fragments)
+      5. [Section Navigation](#section-navigation)
+      6. [References](#references)
+      7. [Appendices](#appendices)
+            - [Collapsible Additional Technical Notes](#collapsible-additional-technical-notes)
+            - [Table of Key Sections](#table-of-key-sections)
+
+      ---
+
+      ## Introduction
+
+      The subroutine `GTCOLD` is designed to process temperature, evaporation, and wind data from an input file using two data formats:
+      - **Format 0**: The post-1980 default format.
+      - **Format 2**: A user-defined format.
+
+      This document details the evolution of the subroutine, modifications made over time, and methods used for error handling and data backspacing.
+
+      ---
+
+      ## Subroutine Overview
+
+      ### Purpose and Functionality
+
+      - **Data Reading**: Supports two distinct formats for reading input data.
+      - **Date Handling**: Adjusts 2-digit year entries to 4-digit format where necessary.
+      - **Error Handling**: Uses backspacing and IO status checks to validate data and handle input errors.
+      - **Station Verification**: Confirms the station number and date accuracy prior to processing further data.
+
+      ### Code Structure
+
+      - **Conditional Branches**: Decisions based on flags such as `IDO`, `IFORM`, and `KTYPE`.
+      - **Loops**: Iterations over the 31 days of each month.
+      - **Read Statements**: Employ different formats and handle possible errors through defined error codes.
+
+      ---
+
+      ## Technical Details
+
+      ### Variable Declarations
+
+      The following variables are declared for use in the subroutine:
+
+      ```fortran
+      INTEGER  DAY, YEAR, STA, FF(8), IVALUE(31)
+      ```
+
+      - `DAY`, `YEAR`, `STA`: Track the day, year, and station number.
+      - `FF(8)`: Used for storing floating-point values temporarily.
+      - `IVALUE(31)`: Array for storing daily records.
+
+      ### Control Flow & Logic
+
+      The subroutine employs:
+      - **Conditional Reads**: The `IF(IDO.EQ.0)` and `IF(IDO.EQ.1)` branches process station data and daily value readings, respectively.
+      - **Loop Constructs**: Iterates to process each day in a month using loops.
+      - **Backspacing**: For error correction by repositioning the file pointer if data does not match expectations.
+      - **Conditional Checks**: For example, adjusting years below 100 by adding 1900 and verifying if station numbers match.
+
+      ### Error Handling
+
+      Error conditions are checked using:
+      - **IOSTAT values**: To determine the success of a read operation.
+      - **Custom Error Messages**: Printed using formatted WRITE statements when an error condition is encountered.
+      - **Example Error Format**:
+
+      ```fortran
+       2000 FORMAT(/,' ===> ERROR !!  READING THE INPUT FILE, UNIT',I3,/,
+             1        '  LAHEY ERROR NUMBER =',I5,/,
+             2        '  EXECUTION STOPS FROM TEMP BLOCK.')
+      ```
+
+      ---
+
+      ## Code Listings
+
+      ### Fortran Routine Header
+
+      Below is the initial part of the Fortran code, which includes subroutine declaration, comments, and inclusion of necessary files:
+
+      ```fortran
+              SUBROUTINE GTCOLD(IDO,IGO)
+      C  TEMP BLOCK
+      C  CALLED BY TEMP NEAR 110 and 112
+              INCLUDE 'TAPES.INC'
+              INCLUDE 'TEW.INC'
+              # GTCOLD Fortran Routine Documentation
+      ```
+
+      ### Key Code Fragments
+
+      The following code snippet demonstrates how the subroutine handles different input formats and error checking:
+
+      ```fortran
+              IF(IDO.EQ.0)   THEN
+                   IF(IFORM.EQ.0) THEN
+                        READ(IO,1000,ERR=60,END=440,IOSTAT=IOS) IBUF,ELMTYP,
+             +              NEWYR,NEWMON
+                        IF(NEWYR.LT.100) NEWYR = NEWYR + 1900
+                        IF(ISTA.GT.0.AND.IBUF.NE.ISTA) GO TO 2
+                        BACKSPACE IO
+                        ISTA = IBUF
+                   ENDIF
+                   IF(IFORM.EQ.2) THEN
+                        NUMPAR = 6
+                        IF(KTYPE.EQ.1.OR.KTYPE.EQ.2) NUMPAR = NUMPAR - 1
+                        IF(KTYPE.EQ.3.OR.KTYPE.EQ.4) NUMPAR = NUMPAR + 1
+                        IF(KTYPE.EQ.6)               NUMPAR = NUMPAR + 2
+                        IF(F1.EQ.0)                  NUMPAR = NUMPAR - 1
+                        READ(IO,FIRMAT,ERR=60,END=440,IOSTAT=IOS) 
+             +             (FF(I),I=1,NUMPAR)
+                        IF(F1.NE.0) IBUF = FF(F1)
+                        NEWYR = FF(F2)
+                        IF(NEWYR.LT.100) NEWYR = NEWYR + 1900
+                        NEWMON = FF(F3)
+                        NEWDAY = FF(F4)
+                        BACKSPACE IO
+                   ENDIF
+                   RETURN
+      ```
+
+      *Note: Additional fragments cover processing of daily records, unit conversions, and final error reporting.*
+
+      ---
+
+      ## Section Navigation
+
+      - [Introduction](#introduction)
+      - [Subroutine Overview](#subroutine-overview)
+      - [Technical Details](#technical-details)
+      - [Code Listings](#code-listings)
+      - [References](#references)
+      - [Appendices](#appendices)
+
+      ---
+
+      ## References
+
+      - [Fortran Documentation][fortran-doc]
+      - [SWMM Model Technical Reference](https://www.epa.gov/water-research/storm-water-management-model-swmm)
+
+      [fortran-doc]: https://gcc.gnu.org/onlinedocs/gfortran/ "GFortran Documentation"
+
+      ---
+
+      ## Appendices
+
+      ### Collapsible Additional Technical Notes
+
+      <details>
+        <summary><strong>Additional Technical Notes</strong></summary>
+        
+        - The subroutine includes legacy updates from 1992 through 2004.
+        - It converts 2-digit years to proper 4-digit years for consistency.
+        - Unit conversions and error messages are dynamically handled.
+        - Detailed comment lines annotate changes and logic at each update iteration.
+      </details>
+
+      ### Table of Key Sections
+
+      | Section               | Description                                                        |
+      | --------------------- | ------------------------------------------------------------------ |
+      | Variable Declarations | Overview of variables and their roles in subroutine processing       |
+      | Control Flow          | Detailed flow of logic including loops, conditionals, and reads      |
+      | Error Handling        | Formats and message structures for managing file read errors          |
+
+      ---
+
+      ## Table of Contents
+
+      1. [Introduction](#introduction)
+      2. [Code Overview](#code-overview)
+            - [Subroutine Purpose](#subroutine-purpose)
+            - [Code Structure](#code-structure)
+      3. [Technical Details](#technical-details)
+            - [Variable Declarations](#variable-declarations)
+            - [Control Flow](#control-flow)
+            - [Fortran Code Blocks](#fortran-code-blocks)
+      4. [Section Navigation](#section-navigation)
+      5. [References](#references)
+      6. [Appendices](#appendices)
+
+      ---
+
+      ## Introduction
+
+      The subroutine `GTCOLD` has been developed to process temperature, evaporation, and wind data from a file. It has been updated over time to fix typos and improve error handling. This documentation provides a detailed markdown conversion preserving the original technical accuracy.
+
+      For further details on Fortran programming, see [Fortran Documentation][fortran-doc].
+
+      ---
+
+      ## Code Overview
+
+      ### Subroutine Purpose
+
+      The main purpose of the subroutine is to:
+      - **Read two data formats**:
+        - Format 0: Post-1980 default format.
+        - Format 2: User-defined format.
+      - **Handle variable station numbers and dates.**
+      - **Process temperature, evaporation, and wind data** and perform necessary unit conversions.
+
+      ### Code Structure
+
+      The code uses:
+      - **Conditional branches** to select record reading based on provided flags.
+      - **Loop structures** to iterate over days in a month.
+      - **Error handling** using IO status and backspace operations.
+
+      ---
+
+      ## Technical Details
+
+      ### Variable Declarations
+
+      The following snippet shows the declaration of key integer variables necessary for data processing:
+
+      ```fortran
+      INTEGER  DAY, YEAR, STA, FF(8), IVALUE(31)
+      ```
+
+      This segment defines:
+      - `DAY`, `YEAR`, and `STA`: Used for date and station number tracking.
+      - `FF(8)`: An array to temporarily store floating-point values.
+      - `IVALUE(31)`: An array that holds daily record values for the month.
+
+      ### Control Flow
+
+      The control flow in `GTCOLD` relies on:
+      - **INITIAL checks of the IFORM flag** to decide the format.
+      - **Conditional READ statements** that divert the process to different branches using `GO TO`.
+      - **Backspacing operations** to re-read data when validation fails.
+      - **Error handling** through dedicated error message formatting and IO status checks.
+
+      ### Fortran Code Blocks
+
+      Below is an example of the Fortran code block for reading the integer declarations:
+
+      ```fortran
+      INTEGER  DAY, YEAR, STA, FF(8), IVALUE(31)
+      ```
+
+      Other code block examples, including main subroutine and error handling, are similarly documented throughout the file.
+
+      ---
+
+      ## Section Navigation
+
+      - [Introduction](#introduction)
+      - [Code Overview](#code-overview)
+      - [Technical Details](#technical-details)
+      - [References](#references)
+      - [Appendices](#appendices)
+
+      ---
+
+      ## References
+
+      - [Fortran Documentation][fortran-doc]
+      - [SWMM Model Technical Reference](https://www.epa.gov/water-research/storm-water-management-model-swmm)
+
+      ---
+
+      ## Appendices
+
+      ### Collapsible Details
+
+      <details>
+        <summary><strong>Additional Technical Notes</strong></summary>
+        
+        - The subroutine includes legacy code updates from 1992 through 2004.
+        - Unit conversion is conditionally applied after data collection.
+        - Detailed error reporting is provided with specific LAHEY error numbers.
+        
+      </details>
+
+      ### Tables in MD Format
+
+      | Section           | Description                                                   |
+      | ----------------- | ------------------------------------------------------------- |
+      | Variable Decls    | Declarations of integers and arrays                          |
+      | Control Flow      | Handling of data reading and conditional jumps               |
+      | Error Handling    | Procedures for error message formatting and IO backspacing     |
+
+      ### Image Placeholder
+
+      ![Fortran Code Diagram](https://via.placeholder.com/600x200 "Fortran Code Diagram")
+
+      ---
+
+      ## References
+
+      [fortran-doc]: https://gcc.gnu.org/onlinedocs/gfortran/ "GFortran Documentation"
+
       CHARACTER ELMTYP*4,LERR*30
 C=======================================================================
       IF(IDO.EQ.0)   THEN

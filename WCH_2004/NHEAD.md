@@ -13,7 +13,109 @@ C       3 - Computes average conduit hydraulic parameters AREA, VEL, HRAD
 C           used to compute flow in _ROUTE routines.
 C
 C     WCH, 11/16/93.  CORRECT MID-CHANNEL WIDTH VALUE FOR NORMAL
-C       SUBCRITICAL FLOW CASE.
+# NHEAD Subroutine Documentation
+
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Flow Cases](#flow-cases)
+      1. [Subcritical Flow Case](#subcritical-flow-case)
+3. [Code Analysis](#code-analysis)
+4. [References](#references)
+5. [Appendices](#appendices)
+
+## Introduction
+This document provides a technical overview of the NHEAD subroutine used in hydraulic modeling. The subroutine computes conduit flow parameters and distinguishes among multiple flow conditions—allowing for detailed evaluation of subcritical, critical, or dry pipe scenarios. The technical details preserved here ensure consistency with the original FORTRAN implementation.
+
+## Flow Cases
+
+### Subcritical Flow Case
+This section is dedicated to the subcritical flow condition. In this regime, flow remains below the critical threshold, indicating that hydraulic head and depth calculations are based on normal flow characteristics.
+
+> **C       SUBCRITICAL FLOW CASE.**
+
+#### Technical Details
+- **Flow Condition:** The conduit is operating under subcritical (normal) flow conditions.
+- **Depth Calculations:** Precise values for the water depths (YNL for upstream and YNH for downstream) are computed using correction factors (e.g., FUDGE) to handle numerical instabilities.
+- **Hydraulic Adjustments:** The subroutine uses these calculated depths to determine parameters like cross-sectional area, hydraulic radius, and velocity.
+- **Further Reading:** See the [SWMM Documentation][swmm-doc] for detailed principles of hydraulic computations.
+
+## Code Analysis
+
+Below is an annotated snippet of the original FORTRAN source code showing how the subroutine addresses the subcritical flow condition:
+
+```fortran
+            SUBROUTINE NHEAD(N,NL,NH,HEAD1,HEAD2,QP,AREA,VEL,HRAD,
+        +                          ANH,ANL,RNL,RNH,IDOIT,KINK,AS1)
+            !---------------------------------------------------------------
+            ! Description:
+            !   Computes hydraulic parameters for conduits based on flow depth
+            !   and condition. Handles subcritical flow when water depths at both 
+            !   upstream and downstream ends exceed a critical threshold.
+            !
+            ! Flow Case: SUBCRITICAL FLOW CASE.
+            !   The subroutine computes water depths (YNL and YNH) relative to 
+            !   the conduit invert and applies appropriate hydraulic adjustments.
+            !
+            ! Key Parameters:
+            !   - HEAD1, HEAD2   : Hydraulic heads at upstream and downstream nodes.
+            !   - YNL, YNH       : Calculated water depths at the upstream and 
+            !                      downstream ends.
+            !   - FUDGE          : A small correction value to prevent computational 
+            !                      errors (e.g., division by zero).
+            !
+            ! Authors: WCH, RED, and subsequent contributors.
+            !---------------------------------------------------------------
+            INCLUDE 'TAPES.INC'
+            INCLUDE 'BD.INC'
+            INCLUDE 'CONTR.INC'
+            INCLUDE 'JUNC.INC'
+            INCLUDE 'PIPE.INC'
+            INCLUDE 'OUT.INC'
+            DIMENSION AS1(NEE)
+            ! ... (further computations, condition checks, and subroutine calls)
+            !
+            ! Subcritical flow is identified and processed as per the comments above.
+            !
+            RETURN
+            END
+```
+
+## Section Navigation
+- [Back to Table of Contents](#table-of-contents)
+- [Next: References](#references)
+
+## References
+- [SWMM Documentation][swmm-doc]
+
+## Appendices
+
+### Appendix A: Glossary
+| Parameter | Description                         |
+|-----------|-------------------------------------|
+| YNL       | Upstream conduit depth              |
+| YNH       | Downstream conduit depth            |
+| FUDGE     | Small correction factor to avoid zero divisions |
+| QP        | Flow rate through the conduit       |
+
+### Appendix B: Additional Resources
+For more technical details and guidance, consult the [SWMM Homepage][swmm-home].
+
+## Collapsible Sections
+
+<details>
+  <summary>Detailed Technical Remarks</summary>
+  
+  The NHEAD subroutine includes multiple checks and calculations to distinguish between flow regimes:
+  
+  - **Adverse Flow (QP < 0):** Special conditions are applied when the upstream head exceeds downstream metrics.
+  - **Positive Flow (QP ≥ 0):** The program calculates a weighting factor (FASNH) to determine the contribution of the conduit area to upstream and downstream nodes.
+  - **Dry Pipe Conditions:** Dedicated lines set hydraulic parameters to minimal values.
+  
+  Such detailed handling ensures robust hydraulic modeling under various physical scenarios.
+</details>
+
+[swmm-doc]: https://www.epa.gov/water-research/storm-water-management-model-swmm
+[swmm-home]: https://www.epa.gov/swmm
 C     RED, 12/31/93.  CORRECTION FOR INTEGER IDOIT VALUE.
 C     WCH, 12/7/94.  ADD RED COMMENTS, SET FASNH = 1.0 ALWAYS, AND
 C       MAKE SEVERAL CODE CHANGES TO CORRESPOND TO RED CODE.

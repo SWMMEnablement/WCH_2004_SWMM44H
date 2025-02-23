@@ -8,7 +8,54 @@ C     JULDAY = JULIAN DAY
 C     TIMDAY = TIME OF DAY IN SECONDS
 C     CORRECTION BY WCH, 4/93 TO FIX CONVERSION FROM TIMDAY IN 
 C       SECONDS TO HR/MIN/SEC.
-C#######################################################################
+# Fortran DATED Subroutine Summary
+
+This document describes the purpose and functionality of the Fortran subroutine `DATED`, which is designed to convert a given Julian date and seconds-of-day into their corresponding calendar date and time components.
+
+## Overview
+
+- **Purpose**:  
+      The subroutine calculates the year, month, day, hour, minute, and second from:
+      - `JULDAY`: a Julian day number (in a modified format where the first part represents the year)
+      - `TIMDAY`: the time of day given in seconds
+
+- **Leap Year Correction**:  
+      The algorithm accounts for leap years by adjusting the days in February. The condition checks if the year is divisible by 4, and if so, sets February's days to 29.
+
+## Detailed Steps
+
+1. **Year Extraction**:
+       - The millennium part of `JULDAY` is divided to extract the preliminary year.
+       - If the preliminary year is less than 100, it is corrected by adding 1900.
+       - The adjusted value of `JULDAY` is then updated.
+
+2. **Month and Day Calculation**:
+       - The variable `JEWEL` holds the remaining day count after extracting the year.
+       - The subroutine compares `JEWEL` to cumulative day counts for each month.
+       - Uses conditional checks (with `IF` statements) to determine the month and the corresponding day (`NDAY`).
+
+3. **Time Conversion**:
+       - Converts `TIMDAY` (seconds of the day) into hours, minutes, and seconds.
+       - A small fractional correction is added to ensure accurate conversion to an integer hour.
+       - Adjustments are made to compute minutes and remaining seconds.
+
+## Notable Aspects
+
+- **Accuracy Adjustment**:  
+      A minor fractional adjustment (`+ 0.0001` for hours and `+ 0.01` for seconds) ensures that rounding errors are minimized, particularly in the hour and second calculations.
+
+- **Conditional Flow**:  
+      The extensive use of `IF` statements and the use of a `GO TO` statement allow the subroutine to break out of the month-selection sequence once the correct month is determined.
+
+## Integration
+
+- **Include File** (`STIMER.INC`):  
+      The subroutine includes an external file (`STIMER.INC`), which may define additional variables or configurations needed for the timing calculations.
+
+## Conclusion
+
+The `DATED` subroutine efficiently converts a combined year-day format and a seconds-of-day count into a human-readable date and time format. This conversion is particularly useful in legacy systems where dates are stored in Julian format, ensuring compatibility and correct time interpretation even with leap years.
+
       INCLUDE 'STIMER.INC'
 C=======================================================================
       NYEAR = JULDAY/1000

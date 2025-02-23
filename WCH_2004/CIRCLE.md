@@ -5,8 +5,52 @@ C     CALLED BY FINDA NEAR LINE 41
 C=======================================================================
 C     ROUTINE TO COMPUTE HYDRAULIC ELEMENTS OF CIRCULAR PIPE.
 C                USES NEWTON-RAPHSON ITERATION TO FIND THETA.
-C     PARABOLIC STARTING GUESS VALID ONLY FOR THETA < 1.3 RADIANS,
-C                                        (ALPHA < 0.04, PSI < 0.015).
+# Extensive Summary of the CIRCLE Subroutine
+
+This Fortran subroutine, CIRCLE, computes the hydraulic elements of a circular pipe by determining the subtended angle, THETA, using a Newton-Raphson iteration. It is designed to work with normalized parameters and supports three modes of operation determined by the input variable ID:
+
+## Modes of Operation
+
+1. **ID = 1 or 2:**  
+      - Input: ALPHA is given (where ALPHA = A/AFULL, the ratio of the current area to full area).  
+      - Process:  
+        - **First Step:** Compute an initial guess for THETA using a parabolic approximation that is valid only for THETA < 1.3 radians (corresponding to ALPHA < 0.04 or PSI < 0.015).  
+        - **Newton-Raphson Iteration:** Apply iterative refinement to solve the equation relating THETA, ALPHA, and the circular geometry. If the iteration fails to converge within a certain tolerance, the subroutine reverts to the first guess and prints a convergence warning.
+        - **Outcome:**  
+             - For ID = 1, after obtaining THETA, calculate PSI (non-dimensional flow parameter).  
+             - For ID = 2, calculate DN (normalized depth) instead.
+
+2. **ID = 3:**  
+      - Input: PSI is given (where PSI = Q/QFULL, a flow ratio).  
+      - Process:  
+        - **Initial Guess:** Estimate THETA with a parabolic approximation based on PSI.  
+        - **Newton-Raphson Iteration:** Adjust THETA iteratively until convergence is reached. If unsuccessful, the subroutine resorts to the initial guess and records a warning.
+        - **Outcome:** Once THETA is determined, compute ALPHA as the ratio of the computed section’s area to the full area.
+
+## Handling Special Cases
+
+- **Out of Range Checks:**  
+  - For ALPHA values outside the (0,1) interval, the subroutine assigns boundary values for PSI and DN.
+  - For PSI values outside the (0,1) interval, ALPHA is similarly set to boundary conditions.
+
+- **Series Expansions for Small Values:**  
+  - When ALPHA or PSI are very small, a series expansion is used. This simplification leverages expansions for sine and cosine for small angles.
+  
+- **Convergence Warning:**  
+  - If the Newton-Raphson iteration does not meet the tolerance criteria (ABS(D) ≤ 0.0001), the subroutine prints a warning message indicating the lack of convergence and continues with the first guess.
+
+## Additional Details
+
+- **External References:**  
+  - The file includes an external include file (TAPES.INC) which may contain common definitions or routines required by the subroutine.
+  
+- **Modification History:**  
+  - Comments in the code note updates and modifications by various authors (notably W.C.H. and A.H. Elliot) aimed at improving convergence for larger angles or refining the starting guesses.
+
+- **Formatting Note:**  
+  - The parabolic starting guess used to compute THETA is valid only when THETA is less than 1.3 radians. This directly corresponds to conditions where ALPHA is less than 0.04 or PSI is less than 0.015.
+
+This summary provides an extensive overview of the structure, purpose, and main computational strategies of the CIRCLE subroutine, offering insights into how it manages different hydraulic scenarios in circular pipes.
 C     WEAKER STARTING GUESSES FOR HIGHER VALUES COULD CONCEIVABLY
 C                                         CAUSE CONVERGENCE PROBLEMS.
 C     UPDATED (NEW COMMON) BY W.C.H., SEPTEMBER 1981.

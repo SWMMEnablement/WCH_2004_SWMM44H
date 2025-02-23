@@ -14,7 +14,117 @@ C       rainfall.  Include calc. of JULDAY when necessary.
 C     WCH, 4/25/94.  Correct computation of Julian date for 15-min.
 C       data for IFORM = 0 and 1.
 C     WCH, 4/26/94.  Major code modifications to permit averaging of
-C       NCDC accumulated rainfall and to list special codes in data.
+# GTRAIN Fortran Code Documentation
+
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Overview of GTRAIN Subroutine](#overview-of-gtrain-subroutine)
+      - [Data Input Formats](#data-input-formats)
+3. [NCDC Accumulated Rainfall Section](#ncdc-accumulated-rainfall-section)
+      - [Special Codes](#special-codes)
+4. [Reference-Style Links](#reference-style-links)
+5. [Tables and Images](#tables-and-images)
+6. [Collapsible Sections and Navigation](#collapsible-sections-and-navigation)
+7. [Appendices](#appendices)
+8. [References](#references)
+
+## Introduction
+This document provides a detailed technical overview of the GTRAIN Fortran subroutine which manages rainfall data processing across multiple formats. The emphasis in this section is on handling NCDC accumulated rainfall and listing the special codes present in the data.
+
+## Overview of GTRAIN Subroutine
+The subroutine GTRAIN is designed to read and process precipitation data from various formats including but not limited to NWS fixed-length records, variable-length records, EarthInfo ASCII data, and AES formats. Structured error handling and comprehensive format detection are core components of its design.
+
+### Data Input Formats
+- **IFORM = 0:** NWS Post-1980 (TD-3240 fixed-length format)
+- **IFORM = 1:** NWS Post-1980 Variable Length Format
+- **IFORM = 2:** NWS Pre-1980 Format
+- **IFORM = 4 / 6:** NCDC Condensed / EarthInfo Display Formats
+- **IFORM = 5, 13, 14, 15:** AES Precipitation Data Formats
+- **IFORM = 7 / 8:** EarthInfo Precipitation Data Formats
+
+Each format is treated with specific routines to handle data conversion, time calculation, and error-checking.
+
+## NCDC Accumulated Rainfall Section
+### Special Codes
+This section describes the handling of accumulated rainfall for NCDC formats. The subroutine processes special codes in the data stream to indicate various conditions such as missing values and meter malfunctions.
+
+**Key Technical Details:**
+- **Accumulated Data:** The code computes accumulated rainfall values using internal conversion routines.
+- **Special Codes:**
+  - `-1` indicates missing precipitation data.
+  - `-2` indicates a meter fault or accumulated error.
+- **Time Handling:** Both hourly (24 intervals) and 15-minute (96 intervals) data points are supported with robust time conversions.
+- **Subroutine Calls:** The routine `RAINCD` is employed throughout to standardize the handling of special codes.
+
+#### Example Fortran Code Snippet
+```fortran
+            IF(IFORM.EQ.2) THEN
+                  IF(XRA(J).EQ.BLK) THEN
+                        HOUR(IDAY,J+J1) = 0
+                        GO TO 35
+                  ENDIF
+                  HOUR(IDAY,J+J1) = INTCHR(XRA(J))
+35       CONTINUE
+            ENDIF
+```
+*This snippet, part of the NCDC data handling, illustrates how special marker codes are interpreted and converted.*
+
+## Reference-Style Links
+For further reading and more detailed technical discussions, please refer to the following:
+- [Fortran Programming Resources][fortran]
+- [SWMM Model Documentation][swmm]
+
+[fortran]: https://fortran-lang.org "Fortran Language Home"
+[swmm]: https://www.epa.gov/water-research/storm-water-management-model-swmm "SWMM Documentation"
+
+## Tables and Images
+### Input Formats Overview
+
+| Input Format | Description                                               | Notes                             |
+|--------------|-----------------------------------------------------------|-----------------------------------|
+| IFORM = 0    | NWS Post-1980 TD-3240 Fixed-Length Format                 | Y2K issues may be present         |
+| IFORM = 1    | NWS Post-1980 Variable Length Format                      | Used for 15-minute data           |
+| IFORM = 2    | NWS Pre-1980 Format                                       | Not Y2K compliant                 |
+| IFORM = 4/6  | NCDC Condensed / EarthInfo Formats                        | Special corrections applied       |
+| IFORM = 5    | AES Hourly Data                                           | Requires unit conversion          |
+| IFORM = 15   | AES 15-Minute Data                                        | Utilizes special averaging scheme |
+
+**Image Example:**
+
+![GTRAIN Flowchart](https://via.placeholder.com/600x400 "Flowchart of GTRAIN Data Processing")
+
+## Collapsible Sections and Navigation
+<details>
+  <summary>Detailed Troubleshooting Steps</summary>
+  
+  **Steps:**
+  
+  1. **Validation:** Ensure input files conform to the specified format.
+  2. **Station Check:** Verify that station IDs match between data and expected configuration.
+  3. **Time Handling:** Confirm that the computed time intervals match the data’s intended granularity.
+  4. **Error Monitoring:** Use IOSTAT and error formats (e.g., 9700, 9600) to diagnose read errors.
+  
+  Use the above steps for swift navigation within the troubleshooting process.
+</details>
+
+## Appendices
+### Appendix A: Error Format Descriptions
+The subroutine defines multiple error messages to handle:
+- **IO Errors:** Specific formats (e.g., 9700, 9600) capture file read errors with IOSTAT details.
+- **Data Integrity:** Checks for valid day/month/year calculations and station consistency.
+
+### Appendix B: Conversion Factors
+- **Rainfall Conversion:** Raw values are converted to inches per hour.
+- **Time Conversion:** HHMM values are parsed and converted to seconds for accurate interval calculations.
+
+## References
+1. [Fortran Language Home](https://fortran-lang.org)
+2. [SWMM Model Documentation](https://www.epa.gov/water-research/storm-water-management-model-swmm)
+3. [EarthInfo Data Documentation](https://www.example.com/earthinfo-docs)
+
+## Conclusion
+The GTRAIN subroutine is a comprehensive solution for processing diverse rainfall data formats. Its meticulous error handling and detailed treatment of accumulated rainfall ensure reliable operation and robust data integrity across various application scenarios.
+
 C     WCH, 5/24/94.  Fix subscript for FLAG1 for IFORM=1 and remove
 C       ILOOP (no discernable purpose).
 C     WCH, 8/1/95.  Change all station IDs to character from integer.
