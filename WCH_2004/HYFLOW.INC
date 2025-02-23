@@ -1,0 +1,4 @@
+      COMMON/HYFLOW/QTAPE(NIE,2),QCARD(NEH,2),JSW(NEH),TSTART,
+     +              TEND,NSTEPS,NINREC
+
+

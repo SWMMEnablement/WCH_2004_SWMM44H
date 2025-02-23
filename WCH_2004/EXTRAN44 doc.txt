@@ -1,0 +1,2022 @@
+*
+*       <<<<<<<<  SWMM 4.4H EXTRAN DATA FILE >>>>>>>>>
+*
+*
+*       February 2001
+*       New D2 and D3 lines.
+*       General clean-up of this file by Chuck Moore and Wayne Huber.
+*       July 20, 2004. Minor change for TOLCS1 variable and for
+*       DEEP and WIDE variables for conduits 9, 10, 11.  
+*       Option for three different spatial weighting, new AA line.  
+*
+*       This is an input data file to the SWMM 4.4H (CDM/OSU) Extran Block
+*       for modeling the hydraulics of sewer or open channel systems.
+*       All lines with an asterisk in column 1 are comment lines
+*       and are ignored by the program.  All information following
+*       an asterisk on an input line are considered to be comments also.
+*       The user should get in the habit if using asterisks to separate
+*       data from comments.
+*
+*       Input data are free format and may be up to 230 columns wide.
+*       You must have a value for every data column even if the program
+*       will not actually use a given value.  There must be at least one
+*       space or comma between every input value.  Alphanumeric data must
+*       be enclosed in single quotes.
+*
+*       Caution!  Data lines that are "wrapped around" (continued on
+*       two or more lines) should have a blank in column 1, unless a
+*       card identifier is needed.
+*
+*       In general, SWMM parameters with names that begin with the letters
+*       I,J,K,L,M,N are integers (e.g., NSCRAT() ), following the usual
+*       Fortran convention, and entered values must not include a
+*       decimal point.
+*
+*       To avoid literary quotes being printed in output, use $NOQUOTE
+*       after MM line.
+*
+*       SWMM uses both U.S. customary units and metric units.  The
+*       examples use feet, cfs, acres, inches and inches/hour.  If metric
+*       is specified substitute meters, cms, hectares, millimeters and
+*       millimeters/hour.  If metric is used, internal computations in
+*       the Extran Block are also performed in metric units.
+*============================================================================
+*       The SW card sets up the interface files to be used or created.  In 
+*       this example there is one output file (#8) that will contain the 
+*       time series of flows for subsequent blocks.
+*       By default, this file contains flows at all outfalls at
+*       each time step.  If you don't need this output, leave JOUT equal
+*       to zero to avoid writing results to scratch file which is
+*       is subsequently erased.  If INTER is entered as a negative number,
+*       then detailed output of model configuration, depths, and flows
+*       are written to the file associated with JOUT in ASCII format.
+*
+*       Extran does not perform pollutant routing.  If pollutants are
+*       included on an input interface file, they are ignored.
+*============================================================================
+*  NBLOCK  JIN(1)  JOUT(1)
+SW    1      0       8
+*============================================================================
+*   The MM card opens the scratch files to be used by different subroutines.
+*   A certain number (up to 8 for Extran) may be required for each block.
+*  NSCRAT(1) - Save results for summary output (unformatted sequential)
+*  NSCRAT(2) - Hot start input and output file (unformatted sequential)
+*  NSCRAT(3) - B9 writing of flows at specified conduits (ASCII or
+*    unformatted sequential)
+*    Note, must define NSCRAT(3) with @-line if use B9 line option.
+*  NSCRAT(4) - Read and write irregular channel data to scratch file
+* NSCRAT(5) - Read tidal history data from ASCII file
+* NSCRAT(8) - Write EPA CEAM WASP (Water Analysis Simulation Program) model 
+*    hydrodynamic input file (.HYD).
+* 
+*============================================================================
+*  NITCH  NSCRAT(1)  NSCRAT(2)  NSCRAT(3)  NSCRAT(4)
+MM   4       1          2          3          4
+*
+*============================================================================
+*     The @ command is used to save an interface or scratch file
+*     permanently, or to access a previously saved file.  This line should
+*     be placed before the first SWMM block call.  The format of the @
+*     command is as follows:
+*============================================================================
+*Column 1    Unit number of the       Name of the interface
+*            interface file saved     file (any valid DOS filename)
+*            or utilized              associated with this unit number.
+*
+*@             8                        'EXDOC.DNT'
+* Note, must define DOS name for NSCRAT(3) when using B9 option.
+@              3                        'scrat3.sav'
+*     If file names are not defined on the @ line, the program will attempt
+*     to read the file names from the command line. For example, enter the
+*     following at the dos prompt, in the batch file, or on the Windows run
+*     line to run swmm.exe, read input from IN.DAT, write output to OUT.OUT,
+*     and save JOUT = 8 output to EXDOC.INT.
+*       SWMM IN.DAT OUT.OUT EXDOC.INT
+*============================================================================
+*Column 1
+* $ANUM  ==> Use alphanumeric names for Extran conduits and junctions.
+*            If used in one block, then alphanumeric must be used in all
+*            prior and subsequent blocks.  Names (IDs) must be enclosed in
+*            single quotes.  Names can include up to 10 characters.
+*            When using default output tables, a maximum length of 6
+*            characters is recommended, although most 10-character names will
+*            print satisfactorily.  This Version 4.4GU includes options *            to provide alternative output tables that will print all
+*            10 digits or characters of the file names (see JP10 input on BA
+*            card.
+*============================================================================
+*Column 1
+* $NOQUOTE ==> Omit on-screen and printed literary quotations in SWMM output.
+*============================================================================
+$EXTRAN         Call the Extran Block with a '$' in first column.
+*============================================================================
+*       Create title lines for the simulation.  There are two title lines
+*       for the Extran Block.  Titles are enclosed in single quotes.
+*============================================================================
+A1 'EXTRAN EXAMPLE SHOWING MOST CONDUIT SHAPES, INCLUDING BRIDGES'
+A1 'INITIAL 20 CFS IN TWO NATURAL CHANNELS'
+*============================================================================
+*    'AA' line offers options for backward and forward version compatibility.
+*    Just two options for first use of this line (July 04).
+*============================================================================
+*    AA line    : Optional.  Not required. 
+*    
+*       NAVER   : For subcritical geometric computations, conduit/channel
+*                 area, hydraulic radius, and width are weighted as follows
+*                 in Subroutine NHEAD:
+*                 AREA = WUP*AREA-up + WMD*AREA-mid + WDN*AREA-down
+*                 and similarly for hydraulic radius and top width.
+*                 NAVER = 1 is SWMM3x option:
+*                      WDN = WUP = 1/4, WMD = 1/2
+*                 NAVER = 2 is SWMM4x option:   <<<<DEFAULT
+*                      WDN = WUP = 0, WMD = 1.0
+*                 NAVER = 3 is SWMM5 option:
+*                      WDN = WUP = 1/6, WMD = 2/3.
+*       NFASNH  : = 0 (default): do not add surface area to upstream node 
+*                  is not included with downstream node when downstream
+*                  node depth is less than normal but greater than critical.
+*                 = 1: do add residual surface area to upstream node. 
+*============================================================================
+*   NAVER  NFASNH
+AA   2      0
+*============================================================================
+*   'B' data lines describe the Extran program control information.
+*============================================================================
+*   'B0' data line is optional and need not be entered by the user.
+*============================================================================
+*    B0 line    :
+*       ISOL    : Solution technique parameter (see Appendix C).
+*                 = 0 Explicit solution of Section 5 (default) (Subroutine
+*                     XROUTE)
+*                 = 1 Enhanced explicit solution (Subroutine YROUTE)
+*                 = 2 Iterative explicit solution using variable
+*                     time-steps <_ DELT (group B1).  Iteration
+*                     limit is ITMAX and convergence criterion is
+*                     SURTOL (group B2). (Subroutine ZROUTE)
+*                 = 3 Explicit solution of Section 5 (ISOL=0) and skips
+*                     calculation when system goes to a steady state as
+*                     defined by TOLCS1,QLOWCS,TOLCS2 (Subroutine XROUTE)
+*                 = 4 Enhanced explicit solution (ISOL=1) and skips
+*                     calculation when system goes to a steady state as
+*                     defined by TOLCS1,QLOWCS,TOLCS2 (Subroutine YROUTE)
+*       KSUPER  : = 0 Use minimum of normal flow and dynamic flow
+*                     when water surface slope  < conduit slope (default).
+*                 = 1 Normal flow always used when flow is supercritical.
+*
+*         The following are required only if ISOL is greater than 2.
+*         Controls for skipping computations during steady state periods
+*       KREDO   : = 0  Use the last computed heads and flows during dry
+*                      periods.
+*                 = 1  Read the hot start file to establish heads and flows
+*                      during steady-state periods.
+*       TOLCS1  : =    Maximum steady state flow imbalance to control when
+*                      model is in steady state conditions expressed as follows:
+*                      IF [ABS(QOUT-QIN) < ABS(TOLCS1*QIN)] then steady state
+*                      conditions prevail.
+*                      Note: to avoid printout of many change of status 
+*                      between steady-state and non-steady-state, enter 
+*                      negative value for TOLCS1.  Absolute value of TOLCS1 
+*                      is used in computation, so negative value has no 
+*                      effect other than to stop status change printouts. 
+*       QLOWCS  : =    Maximum steady state outflow (cfs or cms). Total model
+*                      outflow (including all outfalls and overflows)
+*                      must be less than this value for steady state conditions.
+*       TOLCS2  : =    Maximum change in flow (cfs or cms).  The change in flow
+*                      between inflow hydrograph values must be less than this
+*                      for steady-state conditions to occur.
+*
+*============================================================================
+*  ISOL  KSUPER [KREDO TOLCS1 QLOWCS TOLCS2]
+B0  0      0
+*============================================================================
+*     B1 line :
+*       NTCYC : Number of time-steps desired.
+*       DELT  : Length of time-step, seconds.  Shorten to improve stability
+*               if necessary, but must have DELT >= 1 sec.  Values < 5 sec
+*               should be avoided if possible by using equivalent conduits 
+*               to avoid violation of Courant stability condition.
+*       TZERO : Start time of simulation, decimal hours.  Time zero
+*               is midnight (beginning) of first simulation day.
+*
+*               If inflows to model are provided on interface file
+*               associated with JIN, then model will skip ahead this
+*               many hours in the interface file.
+*
+*       NSTART: First time-step to begin print cycle.
+*       INTER : Interval between intermediate print cycles during
+*               simulation.  Number of cycles printed is
+*               (NTCYC - NSTART)/INTER.
+*               IF INTER is entered as zero. Then it is set equal to a
+*               large number (999999999).
+*               If INTER is entered as a negative number, then system
+*               configuration and intermediate model depth and flow
+*               results are sent to file associated with JOUT in ASCII 
+*               format.  The intent of this file is to provide detailed
+*               model results in a format that is readily accessible to 
+*               post-processor programs.
+*       JNTER : Interval between time-history summary print cycles at end
+*               of simulation.  Number of cycles printed is NTCYC/JNTER.
+*       JREDO : Hot-start file manipulation parameter.
+*               = 0  No hot-start file is created or used,
+*               = 1  Read NSCRAT(2) for initial flows, heads,
+*                    areas, and velocities,
+*               = 2  Create a new hot-start file on NSCRAT(2),
+*               = 3  Create a new hot-start file but use the old
+*                    file as the initial conditions.  The old file
+*                    is subsequently erased and a new file created.
+*                    This option creates a hot-start file starting with
+*                    the existing hot-start file, whereas JREDO=2 creates
+*                    a hot-start file beginning with initial conditions in
+*                    this Extran input file.
+*
+*   Note, the following new (4/11/94) parameter is strictly optional and
+*   may be omitted from B1 line without error.
+*
+*       IDATZ : Initial date of simulation, 8 digits,
+*               YYYYMODY (e.g. 19970915).  If it is written at 970915 then
+*               program will assume that date is 1997
+*               Default is 19410802.
+*               NOTE: If inflows are provided on interface file associated
+*                     with JIN, then DATEZ on interface file is used for
+*                     initial date.
+*                 EXCEPT, if IDATZ is entered as negative number, this
+*                 starting date will be used regardless of starting date
+*                 on interface file.  This permits user to start at some
+*                 intermediate date on interface file.  In this case
+*                 the starting time on B1 line will also be used.  
+*============================================================================
+*   NTCYC DELT  TZERO NSTART INTER JNTER JREDO IDATZ
+B1   2160  20.0   0.0   180    300    1    0   19940101
+*B1  720   20.0   0.0   180    300    15   0   19940101
+*B1  720   20.0   0.0   180    300    15   0
+*============================================================================
+*     B2 line :
+*      METRIC : U.S. customary or metric units for input/output (and 
+*               internal computations).
+*               = 0  U.S. customary units.
+*               = 1  Metric units.
+*      NEQUAL : Modify short conduit lengths and/or incorporate local losses.
+*               = 0  Do not modify lengths or incorporate losses.
+*               = 1  Modify short conduit lengths without incorporating 
+*                    local losses.  This option creates a longer conduit
+*                    with a correspondingly lower roughness.  Under this 
+*                    option and the previous option, no local loss 
+*                    coefficients are required at the end of the C1 line.
+*                    Note: because the cross-section dimensions stay the
+*                    same, this results in an increase in volume in the
+*                    network.  If the user wishes, the user can input
+*                    an alternative equivalent conduit according
+*                    to different criteria, e.g., constant volume.
+*  OPTIONS 2 and 3 INCORPORATE LOCAL LOSSES BY ADJUSTING MANNING'S N
+*  SUCH THAT LOSSES ARE EQUIVALENT FOR FULL-FLOW CONDITIONS.
+*               = 2  Incorporate local losses into closed conduits, but do
+*                    not lengthen conduits.  This option requires three 
+*                    local loss coefficients at the end of the C1 line 
+*                    for each closed conduit.
+*               = 3  Incorporate local losses into closed conduits, and
+*                    lengthen short conduits.  This option requires three
+*                    local loss coefficients at the end of the C1 line for
+*                    each closed conduit.
+*  OPTIONS 4 and 5 INCORPORATE LOCAL LOSSES IN MOMENTUM EQUATION SIMILAR
+*  TO FRICTION TERM
+*               = 4  Incorporate local losses into closed conduits, but do
+*                    not lengthen conduits.  This option requires three 
+*                    local loss coefficients at the end of the C1 line 
+*                    for each closed conduit.
+*               = 5  Incorporate local losses into closed conduits, and
+*                    lengthen short conduits.  This option requires three
+*                    local loss coefficients at the end of the C1 line for
+*                    each closed conduit.
+*      AMEN   : Default surface area for all manholes ft2 [m2].
+*               Used for surcharge calculations in Extran.
+*               Manhole default diameter is 4 ft (1.22 m).
+*      ITMAX  : Maximum number of iterations to be used in surcharge
+*               and iterative calculations (30 recommended for ISOL
+*               0 and ISOL 1; 10 recommended for ISOL 2).
+*      SURTOL : Fraction of average flow in surcharged areas
+*               to be used as convergence criterion for surcharge
+*               iterations (0.05 recommended).  Also, convergence
+*               criterion during flow iterations (ISOL = 2) with
+*               0.0025 recommended.
+*============================================================================
+*   METRIC NEQUAL  AMEN ITMAX SURTOL
+B2     0     0     0.0   30    0.05
+*============================================================================
+*     B3 line :
+*      NHPRT  : Number of junctions for detailed printing
+*               of head output.
+*      NQPRT  : Number of conduits for detailed printing
+*               of discharge output.
+*      NPLT   : Number of junction heads to be plotted.
+*      LPLT   : Number of conduits for flows to be plotted.
+*      NJSW   : Number of input junctions (data group K2), if
+*               user input hydrographs are used.
+*============================================================================
+* NHPRT NQPRT NPLT LPLT NJSW
+B3   5    5    4    4    5
+*============================================================================
+*     B4 line :  Required only if NHPRT > 0 on data group B3.
+*     JPRT(1) :  First junction number/name for detailed printing
+*                of junction elevations.
+*                Continue for the number of junctions defined by NHPRT.
+*============================================================================
+*  JPRT1 JPRT2  etc.
+B4 30002 30004 30006 30081 30082
+*============================================================================
+*     B5 line :  Required only if NQPRT > 0 on data group B3.
+*     CPRT(1) :  First conduit number/name for detailed printing
+*                of conduit flow and velocity.
+*                Continue for the number of conduits defined by NQPRT.
+*============================================================================
+*  CPRT1 CPRT2  etc.
+B5 10001 10003 10005 10081 10082
+*============================================================================
+*     B6 line :  Required only if NPLT > 0 on data group B3.
+*     JPLT(1) :  First junction number/name for detailed plotting
+*                of junction elevations.
+*                Continue for the number of junctions defined by NPLT.
+*============================================================================
+*  JPLT1 JPLT2  etc.
+B6 30002 30006 30081 30082
+*============================================================================
+*     B7 line :  Required only if LPLT > 0 on data group B3.
+*     KPLT(1) :  First conduit number/name for detailed plotting
+*                of conduit flow.
+*                Continue for the number of conduits defined by LPLT.
+*============================================================================
+*  KPLT1 KPLT2  etc.
+B7 10001 10006 10081 10082
+*============================================================================
+*     Data group B8 is optional and may be omitted.
+*============================================================================
+*     B8 line :
+*     NSURF   : Number of conduit upstream/downstream elevation plots.
+*               The upstream/downstream heads are plotted on
+*               the same graph.  A separate plot is also given of the water 
+*               surface slope in this conduit, as a function of time. 
+*     JSURF(1): First conduit number/name for plotting.
+*               Continue for the number of conduits defined by NSURF.
+*============================================================================
+*   NSURF  JSURF1  JSURF2  etc.
+B8    2    10081   10082
+*============================================================================
+*
+*     B9 line   : Controls writing of results of flows in specified conduits
+*                 to ASCII or binary unformatted sequential file (negative 
+*                 IFINTER).  This option allows flows from any conduit to
+*                 be placed on an interface file, whereas use of JOUT on 
+*                 the SW line allows output only of flows at the most 
+*                 downstream locations in the Extran simulation.
+*
+*                 Flows are output when the flow in any of
+*                 the specified conduits is greater than FLOWMIN.
+*                 Flows are output every IFINTER time steps.
+*                 The flow is the average flow over the previous IFINTER
+*                 time steps.
+*                 Flows are written to scratch file number 3.
+*     NOFLOW    : Number of conduits.
+*                 If negative, then the absolute values of the flows are
+*                 written.  This option is useful if one or more of the
+*                 specified conduits has an adverse slope.
+*     NOFDUP      Number of additional conduits to write flows for.
+*                 These are entered on additional lines following this B9 
+*                 line.  This allows the writing of flows in a conduit 
+*                 whenever the flow in another conduit is greater than 
+*                 FLOWMIN.
+*     IFINTER   : Number of time steps to output flows.  Flows will be
+*                 output every IFINTER time steps.
+*                 Enter IFINTER as a negative number to write sequential
+*                 unformatted file for input to STATS or other SWMM Block.
+*     FLOWMIN   : Minimum flow, cfs [cms].  If average flow in any of the
+*                 requested conduits exceeds FLOWMIN, then flows are
+*                 written for all requested conduits.  Enter a large 
+*                 negative number to write all flows for all time steps.
+*     FLOWOUT(1): First conduit number/name for writing flows to ASCII file.
+*     FLOWOUT(2)  Continue for the number of conduits defined by NOFLOW.
+*        ...      These can wrap to subsequent lines but do not
+*                 include B9 identifier on subsequent lines.
+*
+*                 Follow the B9 line with NOFDUP lines for additional 
+*                 conduits for which flows are written when flows in one 
+*                 of the conduits specified on the B9 lines are written.  
+*                 Each line has the following information (no B9 
+*                 identifier is included):
+*       FLOWDUP   Additional conduit ID for which flows are to be written
+*       FLOWREF   Reference conduit.  FLOWREF must be specified as one of
+*                 the FLOWOUT conduits on the B9 lines.  Flows will be 
+*                 written for conduit identified by FLOWDUP whenever flows 
+*                 in the reference conduit FLOWREF are greater than FLOWMIN.
+*
+*
+*    NOFLOW   NOFDUP IFINTER  FLOWMIN  FLOWOUT1  FLOWOUT2 etc.
+B9     5        0      45      10        10001    10002  10003  10004 10005
+*  With a 20 sec time steop, above writes every 15 minutes when flows are 
+*  greater than 10 cfs
+*  NOFDUP possible additional lines, with no B9 identifier, two entries 
+*  per line
+*      FLOWDUP      FLOWREF
+*
+*============================================================================
+*  DATA GROUP B
+*============================================================================
+*  'BA' data line is optional and need not be entered by the user.
+*       If one variable is entered, then a value must be entered for
+*       all variable that appear before, or to the left, of that variable.
+*       This line provides options for modifying program output.
+*       Excluding this data input line or supplying zero values leaves 
+*       the output format unchanged.
+*============================================================================
+*     BA line :
+*      JHEAD  :  Eliminate intermediate headers in summary and time
+*                history output tables to ease pulling results into
+*                spreadsheet or database files.
+*                = 0  Prints header lines at top of each output page as
+*                     in the original program.
+*                = 1  Eliminate intermediate header lines in junction and
+*                     conduit input and output summary tables.
+*      JP10   :  Print all 10 characters and digits at all locations in 
+*                program.  Note that changing this option may cause 
+*                some versions of Extran post-processing programs 
+*                (e.g., MTVE) to not operate correctly.  Also modifies 
+*                significant digits in some output fields (e.g., 
+*                maximum flows in conduit summaries).
+*                = 0  No change
+*                = 1  Consistently print 10 digits and 10 characters 
+*                     throughout program.
+*      IWLEN  :  Irregular section conduit lengths are entered at two 
+*                locations: on the C1 line and on the irregular channel 
+*                input data.  This parameter controls the operation of 
+*                the program regarding these two length inputs.
+*                = 0 or not entered.  The lengths on the C1 line and 
+*                  the C3 or X1 line must be equal or an error will occur.
+*                = 1.  Use lengths specified on the C3 or X1 lines. A 
+*                  warning message is printed if this length does not 
+*                  equal the length on the C1 line.
+*                = 2.  Use lengths specified on the C1 line.  A warning 
+*                  message is generated if the length on the C2 or X1 
+*                  line does not equal the value on the C1 line.
+*============================================================================
+*    JHEAD  JP10 IWLEN
+*BA
+*============================================================================
+*  'BB' data line is optional and need not be entered by the user.
+*       If one variable is entered, then all values must be entered.
+*============================================================================
+*     BB line :
+*      JELEV  :  Input elevations instead of depth for variables ZP1
+*                and ZP2 on data line C1 and elsewhere in the data inputs
+*                = 0  Enter conduit depth offset (ZP values), default.
+*                = 1  Enter absolute elevation of conduit offset ZP1
+*                     and ZP2 only.
+*                = 2  Enter elevations in place of depths for conduit ZPs 
+*                     and for initial water elevations on D1 line.
+*                = 3  Enter elevations in place of depths for conduit ZPs,
+*                     initial water elevations of D1 lines, and surface 
+*                     area/elevation data in place of surface area/depth 
+*                     data on E2 lines
+*                = 4  Enter elevations in place of depths throughout program,
+*                     including pipe ZPs, junction initial depth YO,
+*                     surface area/elevation on E2 lines, orifice ZP,
+*                     variable orifice control depth, weir YCREST and YTOP,
+*                     and pump station control depths.
+*
+*      JDOWN  :  = 0  Use either minimum of normal or critical depth
+*                     at free outfall conduits entered on I1 lines.
+*                     This is the default.
+*                = 1  Use critical depth at free outfall conduits.
+*                = 2  Use normal depth at free outfall conduits.
+*
+*      The next input variable is optional and equals 0 by default.
+*
+*      IPRATE :  = 0  Use default of three PRATE/VRATE pairs for pump
+*                     inputs on H1 line.  In this case the parameter
+*                     NRATES should not be entered on the H1 input line.
+*                = 1  Enter NRATES parameters on pump H1 lines to define
+*                     the number of PRATE/VRATE pairs used by the pump
+*                     station.
+*
+*      The next input variable is optional and equals 0 by default.
+*      If IM2 is entered, IPRATE must also be entered.
+*
+*      IM2    :  = 0  Program uses standard procedures for computing
+*                     characteristic conduit parameters.
+*             :  = 1  Program uses revised procedures for computing
+*                     characteristic conduit parameters for M2 and S2
+*                     drawdown conditions.  See the file M2.DOC for
+*                     more detailed description of this change.
+*
+*      The next input variable is optional and equals 0 by default.
+*      IF IPIPESED is entered, then IM2 and IPRATE must also be entered.
+*      NOTE - Sediment depth option has been implemented for only
+*             circular conduits.
+*
+*      IPIPESED :  0  Program will not read conduit sediment data on C1 line.
+*
+*      IPIPESED :  1  Program will read conduit sediment depth (SEDEDPTH) on
+*                     C1 line.  The sediment depth must input for all 
+*                     conduits in the C1 lines.
+*============================================================================
+*   JELEV   JDOWN IPRATE IM2  IPIPESED
+BB     0       0    0
+*============================================================================
+*  'BC' data line is optional and need not be entered by the user.
+*============================================================================
+*  The BC line controls the output of intermediate continuity summaries.
+*  The continuity results are printed in the intermediate output.  The
+*  maximum five intermediate continuity results are also summarized in
+*  the continuity output in the summary section of the output.
+*     BC line :
+*      ICONTER : Number of time steps.  Continuity summary will be produced
+*                every ICONTER time steps.
+*============================================================================
+*   ICONTER
+* BC   1000
+*============================================================================
+*  The BD line is optional and may be excluded.  This line allows input of
+*  monthly base flow factors that are applied to the flows entered for the
+*  junctions (QINST) entered on the D1 lines.  If no BD lines are entered
+*  then base flow rates remain constant (i.e., base flow factors are set to
+*  1.0.  If one set of BD lines is entered, then this one set is used for
+*  all junctions.  If more than one set of BD lines are entered, then the
+*  program will look for the input defining which set to use on the
+*  D1 lines for each junction.  If no input if found, it is assumed that
+*  the first set is used.  See description of data for D1 lines for more
+*  information.
+*
+*  The maximum number of sets of BD lines is defined by parameter statement
+*  variable MAXSETS.  The number of monthly base flows per set is defined
+*  by parameter statement variable MAXBFF.
+*
+*  The first input on the BD line is the number of input values for this SET.
+*  This is followed by the input factors.  Note that additional values are
+*  wrapped onto following lines.  These following lines should NOT have a
+*  BD as the initial value.  It is not necessary to have 12 values per line.
+*  When a second (or third or fourth...) BD line is read, then the program
+*  reads these as the second SET or third SET... of monthly base flow values.
+*
+*  If 12 values are specified, the program assumes that the first value is
+*  for January, the second February.. and the 12th value is used for 
+*  December.
+*
+*  If a number other than 12 is used, the program assumes that the first 
+*  value is for the first month in the simulation, the second is for the 
+*  second month.  Note that the starting date of the storm is defined by 
+*  IDATEZ on the B1 line (or as defined on the transfer file from 
+*  RUNOFF???).  If the simulation starts on 960206, then the first 
+*  value represents February of 1996, the second, March of 1996...  
+*  If the simulation duration extends past the number of months input, 
+*  then the values are repeated.
+*
+*  BD line :
+*         NUMBFF   : The number of monthly base flow factors to be read on
+*                   this SET of base flow lines
+*         BFFMO(1) : NUMBFF Monthly base flow factors separated by space.
+*                   Values may wrap onto subsequent lines but these lines
+*         BFFMO(2) : should not start with a BD.
+*         BFFMO(NUMBFF) :
+*
+*                   Subsequent sets of base flow factors may be entered
+*                   on additional BD lines.
+*BD  12 1.15 1.15 1.2 1.3 1 1 0.8 0.75 0.8 0.85 0.9 1.1
+*============================================================================
+*  The BE line is optional and may be excluded.  This line allows input 
+*  of up to 10 distinct periods for which intermediate output will be 
+*  printed.  Each period is defined by a starting time step and the ending 
+*  time step.  If BE lines are used, then NSTART on the B1 line is 
+*  ignored.  The interval for printing of intermediate results is defined 
+*  by INTER.  Up to 10 separate BE lines may be entered.  The periods 
+*  specified on BE lines must increase and the periods on BE lines must 
+*  not overlap.
+*
+*  BE line :
+*         IBESTART : The simulation cycle for which output will start.
+*         IBEND    : the simulation cycle for which output will end.
+*
+*  Up to 10 BE lines may be entered defining up to 10 printout periods.
+*============================================================================
+*     IBESTART  IBEND
+*BE    500       600
+*BE    700       800
+*============================================================================
+*  The BF through BH lines are optional and may be excluded.
+*  These lines control the output of Extran model results to generate a
+*  EPA CEAM WASP (Water Analysis Simulation Program) model hydrodynamic
+*  input file (.HYD).
+*
+*  The file name is that used for NSCRAT(8), if given on an @-line.  
+*  The user will be prompted for a file name if not given on an @ line.
+*
+*  Each WASP segment corresponds to one, or more than one, Extran model
+*  junction(s).  Note that more than one contiguous Extran junction can be
+*  lumped to represent a single WASP segment.  Transfer flows between WASP
+*  segments are represented by conduits in the model.  Parallel conduits can
+*  be lumped to represent flows between WASP segments.  The user enters the
+*  number of Extran time steps per WASP time step.  Extran writes segment
+*  volumes, depths, and water velocities at the beginning of each water
+*  quality time step and average link flows over the time step.  WASP uses
+*  flows to calculate mass transport, volumes to compute concentrations,
+*  and segment depths and velocities to calculate reaeration or
+*  volatilization.
+*
+*  The single BF line contains the following inputs.
+*       WTSTART   : Time of day (hours) at which linkage file output
+*                   should begin.
+*       IDEP      : = 0, Output volumes, depths and velocities at
+*                        every time step (time variant).
+*                   = 1, Output volumes, etc. only for first time step
+*                        and hold constant for remainder of WASP
+*                        simulation (time invariant).
+*       NSTEPW    : Number of Extran time steps per WASP time step.
+*       IVCALC    : = 0, Compute volumes using subroutine VOLUME
+*                   = 1, Output volumes tracked during simulation for each
+*                        junction.  This should be more accurate.
+*
+*  BG lines provide mapping between WASP segments and Extran junctions.
+*  Repeat for each WASP segment represented.  Typically all Extran
+*  junctions will not be included in the WASP model.
+*       IWASPSEG  : WASP segment number.
+*       ICONSEG   : Extran conduit to use to compute WASP segment
+*                   velocity.  Velocity is used in WASP in reaeration
+*                   calculations.
+*       NJUNSEG   : Number of Extran junctions that correspond to
+*                   the WASP segment.
+*       JUNSEG(1) : Extran junction(s) that correspond to this WASP
+*                   segment.
+*       ...
+*       JUNSEG(NJUNSEG)
+*
+*  BH lines identify Extran conduits used to represent WASP segment
+*  interfacial flows.  Positive flows are from FROMSEG to TOSEG.  Note that 
+*  in Extran positive flow is defined
+*  as flow from the end of the conduit with the higher invert elevation to
+*  the end of the conduit with the lower invert elevation.
+*  Inflows to the model must be simulated as a flow from FROMSEG 0 and
+*  outflows to the model are simulated as a flow to TOSEG 0.  In this
+*  version, all inflows and outflows to the model must be represented
+*  by an Extran conduit.  Junctions mapped to WASP segment cannot have
+*  direct inflows specified on D1 lines, K3 lines, or through interface
+*  file transfers.
+*
+*       FROMSEG   : "From" WASP segment.
+*       TOSEG     : "To" WASP segment.
+*       NCONSEG   : Number of parallel Extran conduits
+*       ICONSEG   : Extran conduit(s) that correspond to this WASP
+*                   interfacial flow.
+*
+*============================================================================
+*
+*     Data group BZ is optional and may be omitted.
+*     This controls option for writing hydraulics output file
+*     for use by water quality simulation program TRANAID.
+*============================================================================
+*     BZ line  :
+*     IDUMP    : Parameter to control writing of hydraulics file
+*                 0 - file is not written
+*                 1 - file is written
+*     DTHYD    : Time step for hydraulics output file, seconds.
+*     HYDSTR   : Start time for hydraulic output file, hours.
+*     IVCALC   : = 0, Compute volumes using subroutine VOLUME
+*                 = 1, Output volumes tracked during simulation for each
+*                      junction.  This should be more accurate.
+*============================================================================
+*   IDUMP    DTHYD    HYDSTR  IVCALC
+*BZ    1      60.0     24.0
+*============================================================================
+*     'C' data lines describe the conduit links in Extran.
+*============================================================================
+*     C1 line  :
+*     NCOND    : Conduit number (any valid integer), or
+*                conduit name (enclose in single quotes).
+*     NJUNC(1) : Junction number at upstream end of conduit, or
+*                junction name (enclose in single quotes).
+*     NJUNC(2) : Junction number at downstream end of conduit, or
+*                junction name (enclose in single quotes).
+*     QO       : Initial flow, ft3/s [m3/s].
+*     NKLASS   : Conduit Shape.
+*                =  1  Circular.
+*                =  2  Rectangular.
+*                =  3  Horseshoe.
+*                =  4  Egg.
+*                =  5  Basket handle.
+*                =  6  Trapezoidal channel.
+*                =  7  Parabolic/power function channel.
+*                =  8  Irregular (natural) channel.
+*                =  9  Horizontal Ellipse (longest axis is horizontal)
+*                = 10  Vertical Ellipse (longest axis is vertical
+*                = 11  Arch
+*                = 12  Bridge
+*                     Note: Conduit shapes 9, 10, 11 must be entered
+*                           as standard pipe sizes.  See file named
+*                           SHAPE.DOC for standard sizes.   The size
+*                           code is entered for the DEEP parameter.
+*                           If METRIC=1, the standard U.S. sizes, in
+*                           inches, will be converted to meters. 
+*                     Note: A negative NKLASS(N) creates a flap gate
+*                           that will only let water move from the
+*                           downstream junction (lower elevation conduit
+*                           invert) to the upstream junction (higher 
+*                           elevation conduit invert). IF Q>0 THEN Q = 0.
+*     AFULL    : Cross-sectional area of conduit, ft2 [m2],
+*                enter only for NKLASS 3, 4, and 5.  (Geometric
+*                properties for NKLASS 3-5 may be found in Section
+*                6 of the main SWMM User's Manual.)
+*     DEEP     : Vertical depth of conduit, ft [m] (diameter for NKLASS 1).  
+*
+*                Not required for NKLASS 8.  For NKLASS 8, if DEEP is 
+*                zero then the section depth is computed as the maximum 
+*                cross section elevation minus the minimum cross section 
+*                elevation.  If flows are not expected to equal the 
+*                full-section depth, then entering DEEP less than the 
+*                maximum section depth will cause only the bottom 
+*                portion of the cross-section data to be used and may 
+*                result in improved definition of the cross-section 
+*                properties when section is subdivided into 25 
+*                equal-depth segments. 
+*
+*                Optional for ellipse NKLASS 9 and 10 and arch 
+*                NKLASS 11. Enter Size Code for standard sizes 
+*                summarized in file SHAPE.DOC.TXT. 
+*
+*If DEEP and WIDE are entered as negative numbers for horizontal
+*and vertical elliptical pipes, then the full-flow area (Afull) and
+*full-flow hydraulic radius (Rfull) will be approximated as a
+*function of the minor axis length (AMINOR) as follows :
+*
+*          Afull = 1.2692 * AMINOR * AMINOR
+*          Rfull = 0.3061 * AMINOR
+*
+*If DEEP and WIDE are entered as negative numbers for arch pipes,
+*the full flow area (Afull) and full flow hydraulic radius
+*(Rfull) will be approximated as the following:
+*
+*          Afull = 0.7879 * DEEP * WIDE
+*          Rfull = 0.2991 * DEEP
+*
+*     WIDE     : Maximum width of conduit, ft [m].
+*                Bottom width for trapezoid, ft [m].
+*                Top width for parabolic/power function, ft [m].
+*                Not required (see above) for NKLASS 1,8,9,10, or 11.
+*     LEN      : Length of conduit, ft [m]. 
+*                For irregular channels NKLASS 8, by default LEN on the 
+*                C1 line must equal LEN entered on the C3 or X1 line.  
+*                See IWLEN on the BA line options to modify the input of 
+*                length for irregular channels.
+*
+*                Note: A negative LEN(N) creates a flap gate
+*                      that will only let water move from the
+*                      upstream junction (higher elevation conduit invert)
+*                      to the downstream junction (lower elevation conduit
+*                      invert).  IF Q < 0 THEN Q = 0
+*     ZP(1)    : Distance of conduit invert above junction invert
+*                at NJUNC(1), ft [m].
+*     ZP(2)    : Distance of conduit invert above junction invert
+*                at NJUNC(2), ft [m].
+*                Note: If JELEV on line BB is nonzero then ZP(1) and ZP(2)
+*                      are actual elevations referenced to an absolute
+*                      datum.
+*     ROUGH    : Manning's N coefficient (should include entrance, exit,
+*                expansion, and contraction losses if NEQUAL on line B2
+*                equals 0 or 1).  Not required for NKLASS 8.  Uses XNCH in 
+*                data group C2.
+*     STHETA   : Slope of one side of trapezoid.  Required only for
+*                NKLASS = 6, (horizontal/vertical; 0 = vertical walls).
+*
+*                For NKLASS 7, the channel exponent(2.0, 3.0, etc.).
+*
+*                For NKLASS 8, the cross-section identification number
+*                (SECNO, group C3) of the cross section used for
+*                this Extran channel.  Unlike HEC-2, Extran uses only
+*                a single cross section to represent a natural
+*                channel reach for NKLASS 8 channels.  A negative
+*                STHETA(N) will eliminate the printing of the dimension-
+*                less curves associated with each natural channel or
+*                power-function channel.
+*
+*                For NKLASS 12, the bridge section identification number
+*                (BRDGNO, group C5) of the bridge data input to use for
+*                this Extran conduit.  Note: AFULL, DEEP, WIDE, AND ROUGH
+*                are computed from bridge input data.
+*
+*                Alphanumeric inputs cannot be used for STHETA !!
+*
+*                For closed conduits (other than NKLASS 6, 7, 8, and 12),
+*                STHETA can be used to limit the maximum negative flow
+*                in a conduit.  Enter maximum negative flow as a negative
+*                number.  Note that this is in the direction adopted by
+*                Extran (i.e., negative flow is from end of conduit
+*                with lower invert to end of conduit with higher invert).
+*                Entering a positive flow may produce unexpected results.
+*
+*     SPHI     : Slope of other side of trapezoid. Required only for
+*                NKLASS = 6, (horizontal/vertical; 0 = vertical walls).
+*
+*                The average channel slope for NKLASS 8 or 12.
+*                This slope is used only for developing a rating
+*                curve for the channel.  Routing calculations use invert
+*                elevation differences divided by length.  If a slope
+*                approximately equal to the true slope, or HGL slope
+*                is used, than the capacities listed for the section will
+*                approximate the actual capacity.
+*
+*                SPHI can also be used to limit the maximum positive
+*                flow in a conduit.  For NKLASS other than 6, 8, 7, or 12
+*                enter a non-zero SPHI to use this option.
+*                The maximum flow in the conduit is then limited to
+*                this value:  IF Q > SPHI THEN Q = SPHI
+*                Note that positive flow in Extran is defined as flow
+*                from end of the conduit with the higher invert elevation
+*                to the end of the conduit with the lower invert elevation.
+*                Entering a negative number may produce unexpected results.
+*
+*
+*   The following parameters are read for closed conduits (NKLASS 1, 2,
+*   3, 4, 5, 9, 10, and 11 when NEQUAL on card group B2 is set equal
+*   to 2, 3, 4, or 5.  The loss coefficients are then incorporated into
+*   the Manning's roughness value used for the conduit.  
+*     ENTK     : Entrance loss coefficient.
+*     EXITK    : Exit loss coefficient.
+*     OTHERK   : Additional loss coefficient for losses other than entrance
+*                and exit losses, e.g., expansions, contractions, bends
+*                and valves.
+*
+*   The following parameter is read if IPIPESED on line BB is set equal 
+*   to 1.  While it is read for all conduit shapes, this option works 
+*   for only circular conduits in this version of the program.
+*     SEDEPTH  : Depth of sediment in the conduit in feet.  Full depth, 
+*                area, hydraulic radius, and flow capacity will be 
+*                adjusted accordingly.  Conduit invert (ZP values) 
+*                are adjusted for depth of sediment.  Conduit shape 
+*                characteristics used to compute flow at partial depths
+*                (e.g., curves relating area, hydraulic radius, and 
+*                wetted perimeter to depth) are adjusted accordingly.  
+*                JELEV does not affect this input.
+*
+*============================================================================
+*   NCOND NJ1 NJ2    QO  NKLASS AFULL DEEP WIDE  LEN   ZP1 ZP2 ROUGH STHETA SPHI
+C1 10001 30001 30002  0.   1    0.0   3.0  0.0   510.  0.0 0.0 0.015  0.0   0.0
+C1 10002 30002 30003  0.   2    0.0   3.0  3.5   520.  0.0 0.0 0.015  0.0   0.0
+* GEOMETRIC PROPERTIES OF HORSESHOE, EGG AND BASKET-HANDLE ARE IN
+*  SECTION 6 OF MAIN SWMM MANUAL.
+C1 10003 30003 30006  0.   3   13.26  4.0 4.0    530. 0.0 0.0  0.015  0.0   0.0
+C1 10004 30004 30005  0.   4    8.17  4.0 2.67   540. 0.0 0.0  0.015  0.0   0.0
+C1 10005 30005 30006  0.   5   12.58  4.0 3.78   550. 0.0 1.0  0.015  0.0   0.0
+C1 10007 30007 30006  0.   7    0.0   3.0 4.0    570. 0.0 2.0  0.018  0.0   0.0
+C1 10006 30006 30081  0.   6    0.0   5.0 8.0    560. 0.0 0.0  0.020 0.25  0.25
+*  Conduit 10081 uses data from section 91
+C1 10081 30081 30082  0.   8    0.0   5.0 0.0   1000. 0.0 0.0  0.0    91  0.001
+*  Conduit 10082 uses data from section 92
+*          A negative STHETA stops the printout of the
+*             normalized curves for a natural channel.
+C1 10082 30082 30083  0.   8    0.0   5.0 0.0   1000. 0.0 0.0  0.0    92  0.002
+*  TEST OF BRIDGES
+*first is 3 box culverts
+C1 50009 50009 50110  0.  12    0.0  12.0 0.0   400.0 0.0 0.0  0.000 50009  0.002
+C1 50110 50110 50010  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50010 50010 50111  0.  12    0.0  17.4 0.0   400.0 0.0 0.0  0.000 50010  0.002
+C1 50111 50111 50011  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50011 50011 50112  0.  12    0.0   5.5 0.0   400.0 0.0 0.0  0.000 50011  0.002
+C1 50112 50112 50012  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50012 50012 50113  0.  12    0.0   5.5 0.0   400.0 0.0 0.0  0.000 50012  0.002
+C1 50113 50113 50013  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50013 50013 50114  0.  12    0.0   5.5 0.0   400.0 0.0 0.0  0.000 50013  0.002
+C1 50114 50114 50014  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50014 50014 50115  0.  12    0.0   5.5 0.0   400.0 0.0 0.0  0.000 50014  0.002
+C1 50115 50115 50015  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50015 50015 50116  0.  12    0.0   5.5 0.0   400.0 0.0 0.0  0.000 50015  0.002
+C1 50116 50116 50016  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50016 50016 50117  0.  12    0.0   5.5 0.0   400.0 0.0 0.0  0.000 50016  0.002
+C1 50117 50117 50017  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50017 50017 50118  0.  12    0.0   5.5 0.0   400.0 0.0 0.0  0.000 50017  0.002
+C1 50118 50118 50018  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50018 50018 50119  0.  12    0.0   7.0 0.0   400.0 0.0 0.0  0.000 50018  0.002
+C1 50119 50119 50019  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50019 50019 50120  0.  12    0.0   7.0 0.0   400.0 0.0 0.0  0.000 50019  0.002
+C1 50120 50120 50020  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50020 50020 50121  0.  12    0.0   5.5 0.0   400.0 0.0 0.0  0.000 50020  0.002
+C1 50121 50121 50021  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50021 50021 50122  0.  12    0.0   5.5 0.0   400.0 0.0 0.0  0.000 50021  0.002
+C1 50122 50122 50022  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50022 50022 50123  0.  12    0.0   5.5 0.0   400.0 0.0 0.0  0.000 50022  0.002
+C1 50123 50123 50023  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 50023 50023 50124  0.  12    0.0   5.5 0.0   400.0 0.0 0.0  0.000 50023  0.002
+C1 50124 50124 50024  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+*  the following are pseudo bridges to see if results are similar
+C1 61009 60009 60110  0.   2    0.0   5.0 10.0  400.0 7.0 7.0  0.030   0.0  0.000
+C1 62009 60009 60110  0.   2    0.0  12.0 12.0  400.0 0.0 0.0  0.030   0.0  0.000
+C1 63009 60009 60110  0.   2    0.0  10.0 10.0  400.0 2.0 2.0  0.030   0.0  0.000
+C1 60110 60110 60010  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60010 60010 60111  0.   2    0.0  17.4 56.05 400.0 0.0 0.0  0.030   0.0  0.000
+C1 60111 60111 60011  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60011 60011 60112  0.   2    0.0   5.5 97.3  400.0 0.0 0.0  0.025   0.0  0.000
+C1 60112 60112 60012  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60012 60012 60113  0.   2    0.0   5.5 100.3 400.0 0.0 0.0  0.025   0.0  0.000
+C1 60113 60113 60013  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60013 60013 60114  0.   2    0.0   5.5 97.3  400.0 0.0 0.0  0.025   0.0  0.000
+C1 60114 60114 60014  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60014 60014 60115  0.   2    0.0   5.5 97.3  400.0 0.0 0.0  0.030   0.0  0.000
+C1 60115 60115 60015  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60015 60015 60116  0.   2    0.0   5.5 100.3 400.0 0.0 0.0  0.030   0.0  0.000
+C1 60116 60116 60016  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60016 60016 60117  0.   2    0.0   5.5 97.3  400.0 0.0 0.0  0.030   0.0  0.000
+C1 60117 60117 60017  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60017 60017 60118  0.   2    0.0   5.5 100.3 400.0 0.0 0.0  0.030   0.0  0.000
+C1 60118 60118 60018  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60018 60018 60119  0.   2    0.0   7.0 109.9 400.0 0.0 0.0  0.030   0.0  0.000
+C1 60119 60119 60019  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60019 60019 60120  0.   2    0.0   7.0 107.7 400.0 0.0 0.0  0.030   0.0  0.000
+C1 60120 60120 60020  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60020 60020 60121  0.   2    0.0   5.5 120.1 400.0 0.0 0.0  0.030   0.0  0.000
+C1 60121 60121 60021  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60021 60021 60122  0.   2    0.0   5.5 125.4 400.0 0.0 0.0  0.030   0.0  0.000
+C1 60122 60122 60022  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60022 60022 60123  0.   2    0.0   5.5 74.36 400.0 0.0 0.0  0.030   0.0  0.000
+C1 60123 60123 60023  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+C1 60023 60023 60124  0.   2    0.0   5.5 106.0 400.0 0.0 0.0  0.030   0.0  0.000
+C1 60124 60124 60024  0.   6    0.0  20.0 100.0 400.0 0.0 0.0  0.013   1.0  1.0
+*============================================================================
+*  OPTIONAL CS DATA LINE to read or save irregular cross-section data
+* on file associated with NSCRAT(4).
+=======================================================================
+*     CS line  :
+*     IREAD    : Alphanumeric indicator variable (enclose in single quotes).
+*                = 'SAVE', save C2, C3 and C4 data to NSCRAT(4).
+*                = 'READ', read C2, C3 and C4 data from NSCRAT(4) and
+*                   do not read any irregular crosssection data from
+*                   C2, C3 and C4 lines in this input file.
+*=======================================================================
+*CS  'SAVE'
+*=======================================================================
+*        The C2 (NC), C3 (X1), and C4 (GR) data lines are for any NKLASS 8
+*   conduit.  They follow as a group after all C1 lines have been entered.
+*   The sequence for channels must be in the same order that they appear 
+*   on the C1 lines.  The same cross-sectional information on
+*   lines C2-C4 can be used by more than one channel.  I.e., different
+*   channels can have the same STHETA values. 
+*
+*        Data groups C2, C3 and C4 correspond to HEC-2 lines NC,
+*   X1 and GR.  HEC-2 input may be used directly if desired.  Lines
+*   may be identified either by Extran identifiers (C2, C3, C4) or
+*   HEC-2 identifiers (NC, X1, GR).
+*============================================================================
+*        The C2 line is used to input natural channel roughness.
+*   This is an optional data line that permanently modifies the Manning's
+*   roughness coefficients (N) for the remaining natural channels.  This
+*   data group may be repeated for later channels.  It must be included for
+*   the first natural channel modeled.
+*============================================================================
+*   C2 or NC line :
+*         XNL     : n for the left overbank.
+*                   = 0.0  No change.
+*                   > 0.0  New Manning's N.
+*         XNR     : n for the right overbank.
+*                   = 0.0  No change.
+*                   > 0.0  New Manning's N.
+*         XNCH    : n for the channel.
+*                   = 0.0  No change.
+*                   > 0.0  New Manning's N.
+*                   Note:  XNCH is used to develop the normalized
+*                          flow routing curves.  Tabulated values
+*                          of hydraulic radius account for variability
+*                          of n when a constant N (XNCH) is used
+*                          during the flow routing process.
+*============================================================================
+*    XNL   XNR   XNCH
+C2  0.08  0.08   0.03
+*============================================================================
+* C3 or X1 line : Cross Section Data. Required for each NKLASS 8
+*                  conduit in earlier C1 data lines.
+*   THESE MUST BE ENTERED IN SAME ORDER AS THEY APPEAR ON C1 LINES!!!
+*     SECNO     : Cross section identification number (corresponding to
+*                 STHETA value on C1 lines).
+*     NUMST     : Total number of stations on the following
+*                 C4 (GR) data lines.  NUMST must be < 99.
+*     STCHL     : The station of the left bank of the channel,
+*                 ft [m].  Must be equal to one of the STA numbers
+*                 on the C4 (GR) data lines.
+*     STCHR     : The station of the right bank of the channel,
+*                 ft [m].  Must be equal to one of the STA
+*                 on the C4 (GR) data lines.
+*     XLOBL     : Not required for Extran (enter 0.0).
+*     XLOBR     : Not required for Extran (enter 0.0).
+*     LEN       : Length of channel reach represented
+*                 by this cross section, ft [m].
+*     PXSECR    : Factor to modify the horizontal dimensions
+*                 for a cross section.  The distances between
+*                 adjacent C4 (GR) stations (STA) are multiplied by
+*                 this factor to expand or narrow a cross section,
+*                 including STCHL and STCHR on this line.
+*                 The STA of the first C4 (GR) point remains the same.
+*                 The factor can apply to a repeated cross section
+*                 or a current one.  A factor of 1.1 will increase
+*                 the horizontal distance between the C4 (GR) stations
+*                 by 10 percent.  Enter 0.0 for no modification.
+*     PSXECE    : Constant to be added (+ or -) to C4 (GR)
+*                 elevation data on next C4 (GR) line.  Enter
+*                 0.0 to use C4 (GR) values as entered.
+*============================================================================
+* SECNO NUMST STCHL STCHR XLOBL XLOBR LEN PXCECR PSXECE
+C3 91    6    50.0  110.0  0.0   0.0  1000. 0.0   799.0
+*============================================================================
+* C4 or GR line : Cross Section Profile. Required for each NKLASS 8 conduit.
+*     EL(1)     : Elevation of cross section at STA(1).  May be
+*                 positive or negative, ft [m].  In SWMM Extran the 
+*                 elevation-station pairs define the shape of the irregular 
+*                 cross section.  The elevations are adjusted such that the 
+*                 minimum cross-section elevation equals the elevation of 
+*                 the channel invert specified by the Zp on the C1 lines 
+*                 and the elevation of the upstream and downstream junctions.
+*     STA(1)    : Station of cross section 1, ft [m].
+*     EL(2)     : Elevation of cross section at STA(2), ft [m].
+*     STA(2)    : Station of cross section 2, ft [m].
+*
+*        Enter NUMST elevations and stations to describe the cross section.
+*  Enter 5 pairs of elevations and stations per data line.  (Include group
+*  identifier, C4 or GR, on each line.)  Stations must be in increasing
+*  order progressing from left to right across the section.  Cross-section
+*  data are traditionally oriented looking downstream (HEC, 1982).
+*============================================================================
+*  EL1  STA1  EL2  STA2  EL3  STA3  EL4  STA4   EL5  STA5
+C4 5.0  0.0   4.0  50.0  1.0  55.0  0.0  100.0  3.0  110.0
+*  EL6  STA6
+C4 5.0  150.0
+*  OTHER NATURAL CHANNEL
+X1 92    6    55.0  115.0  0.0   0.0  1000. 0.0   798.0
+GR 5.0  0.0   4.5  55.0  0.0  60.0  2.0  95.0   4.0  115.0
+GR 6.0  160.0
+*============================================================================
+*     The following data lines describe the bridge opening.
+*============================================================================
+*    A set of C5, C6, C7 and C8 cards must be provided for each bridge
+*    NKLASS 12 that appears in the C1 lines.  The bridges must be defined
+*    in the same order that they appear in the C1 lines.
+*    Repeat sequence of C5 - C8 lines for each bridge.
+*=======================================================================
+*
+*     C5 line  (same as HEC-2 BC line):
+*       BRDGNO : Bridge identifier number. Must correspond to 
+*                a value from C1 line.  Cannot use alphanumeric ID!
+*       NUMHN  : Number of Manning's N station pairs on C6 lines.
+*       NUMST  : Number of elevation-station pairs on C7 lines.
+*       NMPIER : Number of piers on C8 lines.
+*=======================================================================
+*  BRDGNO  NUMHN  NUMST  NMPIER
+C5  50009    3     8       2
+*=======================================================================
+*                 Bridge Channel Roughness Data
+*     C6 line  (same as HEC-2 HN line):
+*     VMAN(1)  : Manning's N from left of bridge to station STMAN(1)
+*     STMAN(1) : Station of first change in n or location of first
+*                  smooth pier, ft [m].
+*     VMAN(2)  : Manning's N from STMAN(1) to STMAN(2)
+*     STMAN(2) : Station of second change in n or location of second
+*                  smooth pier, ft [m].
+*             Etc.
+*    Repeat NUMHN times. Data can wrap to subsequent lines but do not
+*    start wrapped lines with C6 line identifier.
+*=======================================================================
+*  VMAN  STMAN VMAN STMAN VMAN STMAN
+C6 0.03   10.0 0.03  22.0 0.03  32.0
+*=======================================================================
+*                  Bridge Elevation-Station Data
+*     C7 line (same as HEC-2 GR line)   :
+*     ELSTA(1,1) : Elevation of first cross-section point, ft [m].
+*     ELSTA(2,1) : Station of first cross-section point, ft [m].
+*     ELSTA(1,2) : Elevation of second cross-section point, ft [m].
+*     ELSTA(2,2) : Station of second cross-section point, ft [m].
+*               Etc.
+*    Repeat for NUMST elevation station pairs.  Do not include C7
+*    line identifier on wrapped-around lines.
+*=======================================================================
+C7  114.0 0.0 109.0 0.0 109.0 10.0 102.0 10.0 102.0 22.0 104.0 22.0
+    104.0 32.0 114 32
+*=======================================================================
+*                   Bridge Pier and Low Chord Data
+*     C8 line (same as HEC-2 PR line)  :
+*     PIERW(1)  : Pier width of first pier, ft [m]. Pier width may
+*                 equal zero in which case no losses are included.
+*     PCLSTA(1) : Centerline station of first pier, ft [m].
+*     CHORDL(1) : Low chord elevation at first pier, ft [m].
+*     PIERW(2)  : Pier width of second pier, ft [m].
+*     PCLSTA(2) : Centerline station of second pier, ft [m].
+*     CHORDL(2) : Low chord elevation at second pier, ft [m].
+*              Etc.
+*    Repeat three parameters for NMPIER groups.  Data can wrap to next
+*    lines, but do not include C8 line identifier on wrapped-around lines.
+*    NOTE:  At least one C8 line is required even if NMPIER is zero since
+*           this is only place where low chord elevation is input.
+*=======================================================================
+* PIERW1 PCLSTA1 CHORDL1 PIERW2 PCLSTA2 CHORDL2
+C8  0.0   10.0    114.0   0.0    22.0    114.0
+*=======================================================================
+*TEST.IN
+C5 50010     2       18           6
+C6 0.030 628.5    0.030   732.5
+C7 5.8        628.5    5.2 628.6 2 643.6 2 644.6 0.2 651 -3.6  657.5 -3.6 658.5 -11.1
+   672.5 -11.1 673.5 -10.9 687.6 -10.9 688.6 -11.6 702.7 -11.6 703.7 0.2
+   717.6 0.2 718.6 0.6 719.6 5.3 732.5 5.8 732.5
+C8  1     644.1      5.8        1 658 5.8 1 673 5.8 1 688.1 5.8 1 703.2 5.8 1 718.1 5.8
+*TEST1.IN
+C5 50011     2       10           5
+C6 0.025 250    0.030 310
+C7 6 100 5 120 4.5 140 2 145 1.5 190 3 210 1.5 230 1.0 250 2 280 5 310
+C8  5 142.5 4.5   1 170 5  1 230 5  1 250 6.5  1 290 6
+*TEST1B.IN
+C5 50012     2       10           5
+C6 0.025 250    0.030 310
+C7 6 100 5 120 4.5 140 2 145 1.5 190 3 210 1.5 230 1.0 250 2 280 5 310
+C8  5 142.5 4.5   1 170 5  1 210 5  1 250 6.5  1 290 6
+*TEST1C.IN
+C5 50013     2       10           5
+C6 0.025 210    0.030 310
+C7 6 100 5 120 4.5 140 2 145 1.5 190 3 210 1.5 230 1.0 250 2 280 5 310
+C8  5 142.5 4.5   1 170 5  1 230 5  1 250 6.5  1 290 6
+*TEST2.IN
+C5 50014     2       11           5
+C6 0.030 210    0.025   310
+C7 6 100 5 120 4.5 140 3.25 142.5 2 145 1.5 190 3 210 1.5 230 1.0 250 2 280 5 310
+C8  5  142.5  4.5   1 170 5  1 230 5  1 250 6.5  1 290 6
+*TEST2B.IN
+C5 50015     2       11           5
+C6 0.030 210    0.025   310
+C7 6 100 5 120 4.5 140 3.25 142.5 2 145 1.5 190 3 210 1.5 230 1.0 250 2 280 5 310
+C8  5  142.5  4.5   1 170 5  1 210 5  1 250 6.5  1 290 6
+*TEST3.IN
+C5 50016     2       11           5
+C6 0.030  100    0.025   210
+C7 5 0  2 30  1.0 60  1.5 80  3 100  1.5 120  2 165  3.25 167.5  4.5 170 5 190 6 210
+C8  1 20 6  1 60 6.5  1 80 5  1 140 5  5 167.5 4.5
+*TEST3B.IN
+C5 50017     2       11           5
+C6 0.030  100    0.025   210
+C7 5 0  2 30  1.0 60  1.5 80  3 100  1.5 120  2 165  3.25 167.5  4.5 170 5 190 6 210
+C8  1 20 6  1 60 6.5  1 100 5  1 140 5  5 167.5 4.5
+*TEST4A.IN
+C5 50018     1       6           1
+C6 0.030 390
+C7 6 200 3 240 1 290 1.5 330 4 350 6 390
+C8  1     310      8
+*TEST4B.IN
+C5 50019     3       6           1
+C6 0.030 230      0.020 340  0.025 390
+C7 6 200 3 240 1 290 1.5 330 4 350 6 390
+C8  1     310      8
+*TEST5A.IN
+C5 50020     1       9           1
+C6 0.030 430
+C7 8 50 7 100 6 200 3 240 1 290 1.5 330 4 350 6 390 7.5 430
+C8  1     290      6.5
+*TEST5B.IN
+C5 50021     3       9           1
+C6 0.030 230      0.020 340  0.025 430
+C7 8 50 7 100 6 200 3 240 1 290 1.5 330 3 350 6 390 7.5 430
+C8  1     290      6.5
+*TEST6A.IN
+C5 50022     1       7           0
+C6 0.030 420
+C7 6 200 3 240 1 290 1.5 330 4 350 6 390 7 420
+C8  1     315      6.5
+*TEST6B.IN
+C5 50023     3       7           0
+C6 0.030 260      0.020 360  0.025 420
+C7 6 200 3 240 1 290 1.5 330 4 350 6 390 7 420
+C8  1     315      6.5
+*============================================================================
+*     The 'D1' data lines describes the junction data in Extran.
+*============================================================================
+*     D1 line  :
+*     JUN      : Junction number (any valid integer), or
+*                junction name (enclose in single quotes).
+*     GRELEV   : Ground elevation, ft [m].
+*     Z        : Invert elevation, ft [m].
+*     QINST    : Net constant flow into junction, cfs [m3/s].
+*                Positive indicates an inflow.
+*                Negative indicates a withdrawal or loss.
+*     YO       : Initial depth above junction invert elevation,
+*                ft [m].  Input as elevation if JELEV = 2 or 3.
+*
+*     OPTIONAL ADDITIONAL INPUTS FOR JUNCTIONS
+*
+*     X and Y location of junctions.  These are not used by Extran but
+*     can be passed to graphical pre- and post-processors.
+*     If they are not supplied, comments contained on the D1 line must
+*     start with an asterisk.
+*     XLOC     :   Junction X location
+*     YLOC     :   Junction Y location
+*     These need not be entered even if IWHICH is entered
+*
+*     IWHICH identifies which of the base flow SETS entered on the BD lines
+*     to use for this junction.  The monthly base flow factor is multiplied
+*     by QINST to determine the base flow at this location.  IWHICH
+*     need not be entered.  If IWHICH is not entered and QINST is
+*     greater than zero, the first groundwater set is used by default.
+*     If no factors are entered on the BD lines, the factor is always
+*     equal to 1.
+*     IWHICH should not be entered if no BD lines are present.
+*
+*     SURELEV identifies the maximum surcharge level to which water levels
+*     can rise.  This is used to represent conditions such as bolted manhole
+*     lids where the hydraulic grade line can rise above the GRELEV.  If 
+*     SURELEV is not entered or is entered as zero then GRELEV is used.  
+*     If SURELEV is entered, then HGL levels will be allowed to rise above 
+*     GRELEV up to a maximum as specified by SURELEV.
+*============================================================================
+*    JUN   GRELEV   Z   QINST  Y    [XLOC YLOC IWHICH SURELEV]
+D1 30001   810.0  802.0  0.0  0.0     7     5  * THIS IS JUNCTION 30001 on South Dorf Street
+D1 30002   810.0  801.0  0.0  0.0     6     5  * Ground elevation is approximate.
+D1 30003   810.0  800.5  0.0  0.0     5     5
+D1 30004   810.0  802.5  0.0  0.0     6     4
+D1 30005   810.0  801.5  0.0  0.0     5     4
+D1 30007   806.0  803.0  0.0  0.0     5     3
+D1 30006   806.0  800.0  0.0  0.0     4     5
+* INPUT 20 CFS AT BEGINNING OF NATURAL CHANNELS (E.G., RECEIVING STREAM)
+D1 30081   806.0 799.0  20.   1.5     3     5
+D1 30082   806.0 798.0  0.0   1.5     2     5
+* INITIAL CONDITION OF 2 FT DEPTH AT DOWNSTREAM END (CONSTANT HEAD)
+D1 30083   806.0 796.0  0.0   2.0     1     5
+* bridges
+D1 50009   130   102.0  0.0   0.0    31     2
+D1 50010   130.0 100.0  0.0   0.0  29 2
+D1 50011   130.0  98.0  0.0   0.0  27 2
+D1 50012   130.0  96.0  0.0   0.0  25 2
+D1 50013   130.0  94.0  0.0   0.0 23 2
+D1 50014   130.0  92.0  0.0   0.0 21 2
+D1 50015   130.0  90.0  0.0   0.0 19 2
+D1 50016   130.0  88.0  0.0   0.0 17 2
+D1 50017   130.0  86.0  0.0   0.0 15 2
+D1 50018   130.0  84.0  0.0   0.0 13 2
+D1 50019   130.0  82.0  0.0   0.0 11 2
+D1 50020   130.0  80.0  0.0   0.0 9 2
+D1 50021   130.0  78.0  0.0   0.0 7 2
+D1 50022   130.0  76.0  0.0   0.0 5 2
+D1 50023   130.0  74.0  0.0   0.0 3 2
+D1 50024   130.0  72.0  0.0   0.0 1 2
+D1 50110   130.0 100.9  0.0   0.0 30 2
+D1 50111   130.0  98.9  0.0   0.0 28 2
+D1 50112   130.0  96.9  0.0   0.0 26 2
+D1 50113   130.0  94.9  0.0   0.0 24 2
+D1 50114   130.0  92.9  0.0   0.0 22 2
+D1 50115   130.0  90.9  0.0   0.0 20 2
+D1 50116   130.0  88.9  0.0   0.0 18 2
+D1 50117   130.0  86.9  0.0   0.0 16 2
+D1 50118   130.0  84.9  0.0   0.0 14 2
+D1 50119   130.0  82.9  0.0   0.0 12 2
+D1 50120   130.0  80.9  0.0   0.0 10 2
+D1 50121   130.0  78.9  0.0   0.0 8 2
+D1 50122   130.0  76.9  0.0   0.0 6 2
+D1 50123   130.0  74.9  0.0   0.0 4 2
+D1 50124   130.0  72.9  0.0   0.0 2 2
+* pseudo bridges
+D1 60009   130.0 102.0  0.0   0.0 31 1
+D1 60010   130.0 100.0  0.0   0.0 29 1
+D1 60011   130.0  98.0  0.0   0.0 27 1
+D1 60012   130.0  96.0  0.0   0.0 25 1
+D1 60013   130.0  94.0  0.0   0.0 23 1
+D1 60014   130.0  92.0  0.0   0.0 21 1
+D1 60015   130.0  90.0  0.0   0.0 19 1
+D1 60016   130.0  88.0  0.0   0.0 17 1
+D1 60017   130.0  86.0  0.0   0.0 15 1
+D1 60018   130.0  84.0  0.0   0.0 13 1
+D1 60019   130.0  82.0  0.0   0.0 11 1
+D1 60020   130.0  80.0  0.0   0.0  9 1
+D1 60021   130.0  78.0  0.0   0.0  7 1
+D1 60022   130.0  76.0  0.0   0.0  5 1
+D1 60023   130.0  74.0  0.0   0.0  3 1
+D1 60024   130.0  72.0  0.0   0.0  1 1
+D1 60110   130.0 100.9  0.0   0.0 30 1
+D1 60111   130.0  98.9  0.0   0.0 28 1
+D1 60112   130.0  96.9  0.0   0.0 26 1
+D1 60113   130.0  94.9  0.0   0.0 24 1
+D1 60114   130.0  92.9  0.0   0.0 22 1
+D1 60115   130.0  90.9  0.0   0.0 20 1
+D1 60116   130.0  88.9  0.0   0.0 18 1
+D1 60117   130.0  86.9  0.0   0.0 16 1
+D1 60118   130.0  84.9  0.0   0.0 14 1
+D1 60119   130.0  82.9  0.0   0.0 12 1
+D1 60120   130.0  80.9  0.0   0.0 10 1
+D1 60121   130.0  78.9  0.0   0.0  8 1
+D1 60122   130.0  76.9  0.0   0.0  6 1
+D1 60123   130.0  74.9  0.0   0.0  4 1
+D1 60124   130.0  72.9  0.0   0.0  2 1
+*============================================================================
+*   Optional D2 and D3 lines (new 10/99) to provide option for printing
+*   tabular summary of number of times and total duration that specified
+*   elevations are exceeded at junctions.  The maximum number of elevations
+*   that can be entered is specified by MTHRESH parameter in TAPES.INC.
+*
+*   D2 line specifies the number of elevations entered for each junction.
+*   D2 line provides options to name the various elevations (e.g., 
+*   'culvert crown', 'road berm', 'road crown', 'top of bank', 'building').  
+*   Names can be a maximum of 12 characters and must be enclosed in 
+*   single quotes.
+*
+*     D2 line  :
+*     NTHRESH     : Number of elevation thresholds entered for each junction.
+*     THRESHID(1) : Name or ID for first elevation threshold.
+*     THRESHID(2) : Name or ID for second elevation threshold.
+*     THRESHID(N) : Name or ID for last (NTHRESH) elevation threshold.
+*
+*     NTHRESH   THRESHID1 THRESHID2    THRESHID3    THRESHID4  THRESHID5
+D2      5       'Crown'   'Berm'     'Centerline' 'T. O. Bank' 'Building'
+*
+*   Note that D3 lines need only be entered for those junctions where this
+*   output is desired.  Always input as elevation not depth.  Elevations
+*   need not be in increasing order.  Enter a value of -99.9 if the 
+*   threshold elevation is not needed for this junction.
+*
+*    D3 line  :
+*     JUNTHR    :  Junction number (any valid integer), or
+*                  junction name (enclose in single quotes).
+*     THRESH(1) :  First elevation threshold to be included in 
+*                  output table, ft [m].
+*     THRESH(2) :  Second elevation threshold to be include in 
+*                  output table, ft [m].
+*     THRESH(3) :  Last elevation threshold, ft [m].
+*
+*    JUNTHR    THRESH(1) THRESH(2) THRESH(3) THRESH(4) THRESH(5)
+D3     60121     80        84.0        86.0    85.0       90.0
+D3     30081     -99.9     -99.9      -99.9   804.0      -99.9
+*
+*============================================================================
+*   Optional E0 line (new 12/9/94) to control detailed printing of
+*   variable junction input data.  If this optional line is omitted,
+*   detailed printing will not occur, only the summary print line for
+*   each variable area junction as in past.
+*
+*     E0 line  :
+*     NVSPR    : = 0, Do not print echo of all E1-E2 input data, only
+*                     print summary.
+*                = 1, Echo all variable area input data.
+*=======================================================================
+*     The 'E1' data line describes storage junctions in Extran.
+*          Note: Each storage junction must also have been
+*                 entered in the junction data (Group D1).
+*          There are three types of storage junctions:
+*                (1) Constant storage area.  Enter ASTORE as positive value
+*                    and enter NUMST as zero.  Line E2 is not required.
+*                (2) Variable storage area.  Enter a negative value
+*                    for ASTORE.  Enter NUMST surface area
+*                    and depth pairs values on line E2 are necessary.
+*                (3) Power function storage area.  Enter negative
+*                    values NUMST and any value for ASTORE.
+*                    Two data values are entered on line E2.
+*============================================================================
+*     E1 line  :
+*     JSTORE   : Junction number containing storage facility, or
+*                junction name (enter in single quotes).
+*     ZTOP     : Junction crown elevation (must be higher than crown
+*                of highest conduit connected to the storage junction), 
+*                ft [m].
+*     ASTORE   : Storage volume per foot (or meter) of depth
+*                (i.e., constant surface area) ft3/ft [m3/m].
+*                Set ASTORE(J) < 0 to indicate a variable-area
+*                storage junction.  ASTORE may be any value for power
+*                function storage junction.
+*     NUMST    : Total number of surface area/depth pairs on following
+*                E2 data lines.  NUMST < 30.   Enter a value of -2 for
+*                NUMST to generate area vs. stage using a power function.
+*
+*   Power function is: A(y) = Coefficient X y^exponent  +  AMEN
+*   Minimum area when y = 0 is AMEN from line B2.
+*   Volume calculations are integral of this equation.
+*
+* E1 JSTORE ZTOP ASTORE NUMST
+*============================================================================
+*                      Line E2 variable storage data.
+*     Variable-Area Storage Junction, Stage vs. Surface Area Points.
+*============================================================================
+*     E2 line     :
+*     QCURVE(1,1) : Surface area of storage junction at depth point # 1,
+*                   acres [hectares].  Note, lowest area (first entry)
+*                   should not = 0.  If it = 0, it will be set to AMEN
+*                   (line B2).  If NUMST equals -2 this is the
+*                   coefficient of the power function.
+*     QCURVE(2,1) : Depth above junction invert at point 1, ft [m].
+*                   Note, first depth should = 0.  If not, it will be
+*                   set to zero.  Read as elevation if JELEV equals 2.
+*                   If NUMST equals -2 this is the exponent of the
+*                   power function and is the last value entered.
+*
+*                   Repeat for NUMST pairs of values if NUMST > 0.
+*                   If more than one line is required leave the first
+*                   two columns blank in the second etc. line.
+*============================================================================
+*        The 'F1' data line contains Extran orifice data (Max of 200).
+*============================================================================
+*     F1 line     :
+*     NJUNC(1)    : Junction number containing orifice, or
+*                   junction name (enter in single quotes).
+*     NJUNC(2)    : Junction number to which orifice discharges, or
+*                   junction name (enter in single quotes).
+*     NKLASS      : Type of orifice.
+*                    =  1 Side outlet circular.
+*                    =  2 Bottom outlet circular.
+*                    =  3 Side outlet rectangular.
+*                    =  4 Bottom outlet rectangular.
+*                    = -1 Time-history side outlet circular orifice
+*                         with data entered on data group F2.
+*                    = -2 Time-history bottom outlet circular orifice
+*                         with data entered on data group F2.
+*                    = -3 Time-history side outlet rectangular orifice
+*                         with data entered on data group F2.
+*                    = -4 Time-history bottom outlet rectangular orifice,
+*                         with data entered on data group F2.
+*                    = 11 Side outlet circular orifice with timed closure
+*                         with control data entered on data group F3.
+*                    = 12 Bottom outlet circular orifice with timed closure
+*                         with gated control data entered on data group F3.
+*                    = 13 Side outlet rectangular orifice with timed closure
+*                         with gated control data entered on data group F3.
+*                    = 14 Bottom outlet rectangular orifice with timed 
+*                         closure with gated control data entered on data 
+*                         group F3.
+*                    = 21 Side outlet circular orifice with head-dependent
+*                         gated control with data entered on data group F4.
+*                    = 22 Bottom outlet circular orifice with head-dependent
+*                         gated control with data entered on data group F4.
+*                    = 23 Side outlet rectangular orifice with head-dependent
+*                         gated control with data entered on data group F4.
+*                    = 24 Bottom outlet rectangular orifice with head-
+*                         dependent gated control data entered on data
+*                         group F4.
+*     AORIF       : Orifice area, ft2 [m2].  Required only for circular
+*                   orifices.  Area for rectangular orifices computed from
+*                   width and depth.  Opened/closed area for types 11
+*                   through 14 and 21 through 24.
+*     CORIF       : Orifice discharge coefficient.
+*                   Enter as a negative number if you want the invert
+*                   elevation to change as the orifice opens and closes for
+*                   time history, time closure, and head-dependent closure
+*                   (e.g., inflatable dam).  In this case, Zp should
+*                   equal ZP when the orifice or gate is fully opened.
+*     ZP          : Distance of orifice invert above junction
+*                   invert (define only for side outlet orifices), ft [m].
+*     DEEPO       : Vertical depth or height of rectangular orifice
+*                   opening, ft [m].
+*                   Not required for circular orifices.
+*     WIDEO       : Horizontal width of rectangular orifice opening, ft [m].
+*                   Not required for circular orifices.
+*                   Note that DEEPO and WIDEO are interchangeable for
+*                   bottom outlet rectangular orifices.
+*                   DEEPO, WIDEO, AORIF define "open" dimensions for time
+*                   closure and head-dependent orifices.
+*
+*============================================================================
+*           Enter time-history orifice data on line F2.
+*           Each F2 line follows the appropriate F1 line.
+*       Maximum of 50 time-history orifices.
+*============================================================================
+*     F2 line     :
+*     NTIME       : Number of data points to describe the time
+*                   history of the orifice (50 max.).
+*     VORIF(1,1)  : First time, hours, that the orifice discharge
+*                   coefficient and area change values from initial
+*                   settings of group F1 above.  Time zero refers to
+*                   beginning (midnight) of beginning day of simulation.
+*                   E.g., VORIF(I,1,1) = 22.0 means first change in
+*                   orifice setting occurs at 10:00 p.m. on first day of
+*                   simulation.  Increase hours past 24 (e.g., 25, 26)
+*                   for multi-day simulations.
+*     VORIF(1,2)  : First new value of orifice discharge coefficient.
+*     VORIF(1,3)  : First new value of orifice area, ft2 [m2].
+*                   For rectangular orifices, only the depth is adjusted;
+*                   the orifice width remains unchanged.
+*
+*                   Repeat for NTIME values of time/coefficient/area.
+*                   Only one F2 group identifier is required, on the
+*                   first data line.  Subsequent lines (if required)
+*                   should not include F2 identifier.
+*============================================================================
+*           Enter timed closure gated control orifice data on line F3.
+*           Each F3 line follows the appropriate F1 line.
+*============================================================================
+*     F3 line     :
+*     ICNODE      : Control junction at which the depth controls the opening
+*                   and closing of the gate.  Can be any junction in the system.
+*     OOPEN       : Depth at control junction at which the gate opens, ft [m].
+*     OCLOSE      : Depth at control junction at which the gate closes, ft [m].
+*                   If OOPEN is greater than OCLOSE, the gate is open when
+*                   depths are greater than OOPEN and closed when depths are
+*                   less than OCLOSE.
+*                   If OOPEN is less than OCLOSE, the gate is open when
+*                   depths are less than OOPEN and closed when depths are
+*                   greater than OCLOSE.
+*     OCAREA      : Close orifice area, ft2 [m2].  In circular orifices,
+*                   the diameter changes to match the area.  In rectangular
+*                   orifices, only the depth changes and the width remains
+*                   unchanged.
+*     ORATE       : Time required to move gate from open position to closed
+*                   position or vice versa, hours.  This controls the maximum
+*                   rate of gate opening or closing during any time step.
+*     IDIR        : Flow direction control
+*                    = -1 Flow is only in the upstream direction when
+*                         gate is open.
+*                    =  0 Flow is in both directions when gate is open.
+*                    =  1 Flow is in downstream direction when gate is open.
+*     IOPRNT      : Controls intermediate output summary
+*                    =  0 No intermediate output summary is produced.
+*                    =  1 Intermediate output includes summary of orifice
+*                         data each time a change is made in the orifice area.
+*============================================================================
+*           Enter head-dependent gated control orifice data on line F4.
+*           Each F4 line follows the appropriate F1 line.
+*============================================================================
+*     F4 line     :
+*     ICNODE      : Control junction at which the depth controls the opening
+*                   and closing of the gate.  Can be any junction in 
+*                   the system.
+*     OOPEN       : Depth at control junction at which the gate is fully
+*                   open, ft [m].
+*     OCLOSE      : Depth at control junction at which the gate is fully
+*                   closed, ft [m].
+*                   If OOPEN is greater than OCLOSE, the gate is open when
+*                   depths are greater than OOPEN and closed when depths are
+*                   less than OCLOSE.
+*                   If OOPEN is less than OCLOSE, the gate is open when
+*                   depths are less than OOPEN and closed when depths are
+*                   greater than OCLOSE.
+*                   If depths are between OOPEN and OCLOSED, the gate 
+*                   opening is linearly interpolated between the open
+*                   area and the closed area.
+*     OCAREA      : Close orifice area, ft2 [m2].  In circular orifices,
+*                   the diameter changes to match the area.  In rectangular
+*                   orifices, only the depth changes and the width remains
+*                   unchanged.
+*     ORATE       : Time required to move gate from open position to closed
+*                   position or vice versa, hours.  This controls the 
+*                   maximum rate of gate opening or closing during any 
+*                   time step.
+*     IDIR        : Flow direction control
+*                   = -1 Flow is only in the upstream direction when gate
+*                        is open.
+*                   =  0 Flow is in both directions when gate is open.
+*                   =  1 Flow is in downstream direction when gate is open.
+*     IOPRNT      : Controls intermediate output summary
+*                   =  0 No intermediate output summary is produced.
+*                   =  1 Intermediate output includes summary of orifice
+*                        data each time a change is made in the orifice area.
+*============================================================================
+*F1  30000 30001 13 0.7853981 0.60  2.0 1.0 5.0
+*F3  30000 13.0 12.5 0.1 0.5   0   1
+*============================================================================
+*        The 'G1' data line contains Extran weir data (Max of 60).
+*============================================================================
+*     G1 line     :
+*     NJUNC(1)    : Junction number at which weir is located, or
+*                   junction name (enter in single quotes).
+*     NJUNC(2)    : Junction number to which weir discharges, or
+*                   junction name (enter in single quotes).
+*                   Note: To designate outfall weir, set NJUNC(N,2)
+*                         equal to zero or ' ' (one space between quotes).
+*                         In this case the boundary condition must be
+*                         specified in the J1 lines for NJUNC(1).  Weir
+*                         outfalls can't have flap gates.
+*     KWEIR       : Type of weir.
+*                   = 1 Transverse horizontal weir (exponent = 3/2).
+*                   = 2 Transverse horizontal weir with tide gate.
+*                   = 3 Side flow horizontal weir (exponent = 5/3).
+*                   = 4 Side flow horizontal weir with tide gate.
+*                   = 5 V-notch or triangular (exponent = 5/2).
+*                   = 6 V-notch or triangular with tide gate.
+*                   = 7 Trapezoidal (compound exponent)
+*                   = 8 Trapezoidal with tide gate.
+*     YCREST      : Height of weir crest above invert, ft [m].
+*     YTOP        : Height to top of weir opening above invert
+*                   (surcharge level), ft [m].
+*     WLEN        : Weir length, ft [m].  Not used for V-notch weirs.
+*     COEF        : Coefficient of discharge for weir.  If KWEIR = 7 or 8,
+*                   COEF is for rectangular portion of weir.
+*
+*  Note, side flow weirs operate as transverse weirs for reverse flow
+*  situations.
+*
+*  The following parameters are strictly optional for KWEIR < 5, and
+*  they may be omitted from the G1 line without error. If one or more
+*  of these four parameters are required and/or used, all four must be
+*  entered.
+*
+*     ISUBEQ      : Submergence equation.
+*                   = 0 Submergence equation used in previous versions of
+*                       SWMM.
+*                   = 1 Villemonte equation. (ref.  Handbook of Hydraulics
+*                       Brater and King, 1976)
+*     ENDCON      : Number of end contractions.  Only applies to KWEIR = 1,
+*                   2, 7, and 8.  Weir length is reduced by 0.1*Head*ENDCON.
+*     THETAV      : Angle in degrees of V-notch or trapezoidal end sections.
+*                   See figures below for definition of THETAV
+*     COEF2       : Coefficient for triangular portion of trapezoidal weir.
+*                   Not used for KWEIR < 7.
+*     Summary of equations used:
+*
+*        Free discharge  (Water elevation on downstream side of weir
+*                         is below weir crest)
+*               HEADW = water elevation on upstream side of weir above
+*                       weir crest)
+*           Transverse horizontal weir or side flow weir with reverse flow:
+*               Q = COEF * WLEN * (1.0 - 0.1 * ENDCON * HEADW) * HEADW**1.5
+*           Side flow horizontal weir
+*               Q = COEF * WLEN * HEADW**1.66667
+*           Triangular or V-notch weir                *<--THETAV--->*
+*               Q = COEF * TAN(THETAV/2) * HEADW**2.5    *         *
+*                                                         *     *
+*                                                            *  _______YCREST
+*           Trapezoidal
+*               Q = COEF * WLEN * (1.0-0.1*ENDCON*HEADW) * HEADW**1.5
+*                   +COEF2 * TAN(THETAV/2) * HEADW**2.5
+*
+*                              *<-THETAV/2->                        *
+*                                *         |                      *
+*                                  *       |                    *
+*                                    *     |                  *
+*                                      *   |                *
+*                                        *                *
+*                                          ************** ____________YCREST
+*                                          <----WLEN---->
+*
+*          Weirs with tide gates subtract a head loss from the head on
+*          the weir by applying above equations.
+*          This head loss is computed using the ARMCO equation.
+*              HLOSS = (4./GRVT)*VEL1**2*EXP(-1.15*VEL1/SQRT(HEADW))
+*          where VEL1 is velocity through weir prior to applying correction.
+*
+*         Submerged weir - when water level on downstream side of weir
+*                          exceeds weir crest.
+*        Head1 = upstream water level above crest
+*        Head2 = downstream water level above crest
+*        Ratio = head2/head1
+*        Power = Power used in weir equation (1.5 for transverse horizontal,
+*                1.66667 for side flow horizontal , 2.5 for V-notch)
+*
+*       Correct for weir submergence.
+*
+*       Q corrected = CONST * Q uncorrected
+*
+*         Original version used linear interpolation through the following
+*         points.       Q corrected = CONST * Q uncorrected
+*                     RATIO      CONST
+*                      0.0         1.0
+*                      0.30        1.0
+*                      0.75        0.9
+*                      0.85        0.8
+*                      0.95        0.4
+*                      1.0         0.0
+*
+*      Villemonte Equation
+*                      CONST = (1.0 - RATIO**POWER)**0.385
+*
+*      For trapezoidal weirs, the separate corrections are applied to both
+*      "halves" of flow equation.
+*      When weir goes into surcharge (e.g., depth of flow over weir 
+*      exceeds YTOP) an orifice equation is used. The orifice coefficient 
+*      is set such that the flow through the equivalent orifice after 
+*      surcharge equals the flow over the weir prior to surcharge.
+*
+*
+* NJUNC(1) NJUNC(2) KWEIR YCREST YTOP WLEN COEF ISUBEQ ENDCON THETAV COEF2
+*============================================================================
+*        The 'H1' data line contains Extran pump data (Max of 75).
+*============================================================================
+*     H1 line     :
+*     IPTYP       : Type of pump.
+*                   = 1 Off-line pump with wet well (program will
+*                       set pump junction invert to -100).
+*                       Pumping rate depends on volume in pumped junction.
+*                       Pumping is constant between PRATE/VRATE points.
+*                       Note:  ONLY ONE CONDUIT CAN BE CONNECTED TO A
+*                              TYPE 1 PUMP JUNCTION.
+*                       Pump Rate - PRATE(1) for volumes less than VRATE(1)
+*                                   PRATE(2) for volumes less than VRATE(2)
+*                                   PRATE(3) for volumes greater than or
+*                                   equal to VRATE(2)
+*                   = 2 In-line lift pump.
+*                       Pumping rate depends on depth in pumped junction.
+*                       Pumping is constant between PRATE/VRATE points.
+*                       Pump Rate - PRATE(1) for depths less than VRATE(1)
+*                                   PRATE(2) for depths less than VRATE(2)
+*                                   PRATE(3) for depths greater than or
+*                                   equal to VRATE(2)
+*                   = 3 Three-point head-discharge pump curve.
+*                       Pumping rate depends on difference in head between
+*                       discharge junction and pumped junction.  Pumping
+*                       rate varies linearly interpolated from entered
+*                       PRATE/VRATE points.
+*                   = 4 Variable speed in-line pump.
+*                       Pumping rate depends on depth in pumped junction.
+*                       Pumping rate varies linearly between input
+*                       PRATE/VRATE points.  Rate is constant at rate
+*                       defined by first PRATE for depths less than VRATE(1).
+*                       Rate is constant at rate defined by last PRATE for
+*                       depths greater than last VRATE.  PON and POFF are
+*                       optional inputs.  If entered, pump comes on when
+*                       depth equals or exceeds PON and pump turns off when
+*                       depth is less than POFF.
+*                   = 5 Lift station type pump.  This pump type was added to
+*                       more realistically simulate the operation of typical
+*                       pump stations.  PRATE(1), PRATE(2), and PRATE(3) 
+*                       are individual pumping capacities of the installed 
+*                       pumps.  Pump # 1 with capacity of PRATE(1) comes on 
+*                       at depth specified by VRATE(1) in the pumped 
+*                       junction and stays on until water levels in
+*                       the pumped junction drop to POFF.  Similarly, 
+*                       Pump # 2 with capacity of PRATE(2) comes on at 
+*                       depth specified by VRATE(2) and stays on until 
+*                       water levels drop to POFF.
+*     NJUNC(1)    : Junction number being pumped, or
+*                   junction name (enter in single quotes).
+*     NJUNC(2)    : Pump discharge goes to this junction number, or
+*                   junction name (enter in single quotes).
+*                   Note, to pump to an outfall, pump to a junction
+*                   designated on an I1 line.
+*     NRATES      : Number of PRATE/VRATE Pairs.
+*                   Enter this parameter only if optional parameter
+*                   IPRATE on BB line is entered as a 1.
+*                   By default, three PRATE/VRATE pairs are used.
+*     PRATE(1)    : Lower pumping rate, ft3/s [m3/s].
+*     PRATE(2)    : Mid-pumping rate, ft3/s [m3/s].
+*     PRATE(3)    : High pumping rate, ft3/s [m3/s].
+*                   Repeat the PRATE values NRATES times.
+*
+*                   Note PRATE does not necessarily have to increase
+*                   but usually will.  PRATE is the capacity of the
+*                   individual pumps for type 5.
+*
+*                   VRATE values must increase for types 1, 2, and 4.
+*
+*                   VRATE values must decrease for type 3.
+*
+*     VRATE(1)    : If IPTYP = 1 enter the wet well volume for
+*                            mid-rate pumps to start, ft3 [m3].
+*                   If IPTYP = 2 enter the junction depth for
+*                                 mid-rate pumps to  start, ft [m].
+*                   If IPTYP = 3 enter the head difference (head at
+*                      junction downstream of pump minus head at
+*                      junction upstream of pump) associated with the
+*                      lowest pumping rate, ft [m].  (This will be the
+*                      highest head difference.)
+*                   If IPTYP = 4 enter the pumped junction depth for
+*                      which the pump rate equals PRATE(1).  If depths
+*                      are less than VRATE(1) rate equals PRATE(1).
+*                   If IPTYP = 5 enter the depth at which pump #1 with
+*                      capacity of PRATE(1) turns on.
+*     VRATE(2)    : If IPTYP = 1 enter the wet well volume for
+*                      high-rate pumps to start, ft3 [m3].
+*                   If IPTYP = 2  enter the junction depth for
+*                      high-rate pumps to start, ft [m].
+*                   If IPTYP = 3 enter the head difference associated
+*                      with the mid-pumping rate, ft [m].
+*                   If IPTYP = 4 enter the pumped junction depth at
+*                      which the pump rate equals PRATE(2).  Pumping rate
+*                      is linearly interpolated from PRATE/VRATE input 
+*                      points.
+*                   IF IPTYP = 5 enter the depth at which pump #2 with 
+*                      capacity equal to PRATE(2) comes on.
+*
+*                   Note: A non-zero VRATE(I,3) and VWELL(I) are
+*                                required only if IPTYP = 1, 3, or 4.
+*
+*     VRATE(3)    : If IPTYP = 1 enter total wet well capacity, ft3 [m3].
+*                   If IPTYP = 3 then enter the head difference associated
+*                      with highest pumping rate, ft [m].  (This will be
+*                      the lowest head difference.)
+*                   If IPTYP = 4 enter the pumped junction depth at
+*                      which the pump rate equals PRATE(3).
+*                   IF IPTYP = 5 enter the depth at which pump #3 with 
+*                      capacity equal to PRATE(3) comes on.
+*                   Repeat VRATE NRATES times for IPTYP 1, 3, 4 or 5.
+*                   Repeat VRATE NRATES minus 1 times for IPTYP = 2.
+*
+*                   Note: VWELL is required only for types 1 or 3.
+*
+*     VWELL       : If IPTYP = 1 then enter initial wet well volume, 
+*                      ft3 [m3].
+*                   If IPTYP = 3 then enter the initial depth in the pump
+*                      inflow junction, ft [m].
+*
+*                   Note: Enter PON(I) is required for IPTYP = 3
+*                         PON(I) is optional for IPTYP = 4.
+*
+*     PON         : Depth in pump inflow junction to turn pump on, ft [m].
+*
+*                   Note: POFF(I) is required for IPTYP = 3, or 5.
+*                         POFF(I) is optional for IPTYP = 4.
+*
+*     POFF        : Depth in pump inflow junction to turn pump off, ft [m].
+*
+*                   Note: Enter PONDELAY(I) for IPTYP = 5.
+*
+*     PONDELAY    : Time, seconds, required for pump rate for individual
+*                   pumps to increase from zero to full capacity.  Used to
+*                   avoid shock produced by instantaneously turning pumps
+*                   on at full capacity.  Pump rates increase linearly from
+*                   zero to PRATE over PONDELAY seconds.
+*============================================================================
+* IPTY NJUNC  NJUNC  PRATE1  PRATE2 PRATE3 VRATE1 VRATE2 VRATE3  VWELL  PON  POFF
+*H1   3  401    301   10.0     50.0   100.0   70.0   60.0  50.0   5.00  6.00  2.00
+*============================================================================
+*     'I' data lines list the outfall junctions in Extran.
+*           I1 - Outfalls without tide gates (1 line/outfall, 200 Max)
+*           I2 - Outfalls with tide gates (1 line/outfall, 200 Max)
+*         Note : for groups I1 and I2, enter junction name in single quotes
+*                if the alphanumeric option is being used.
+*         Note : ONLY ONE CONNECTING CONDUIT IS PERMITTED TO AN 
+*                OUTFALL JUNCTION.
+*============================================================================
+*     I1 line     :
+*     JFREE       : Number/name of outfall junctions without tide gate
+*                   (no back-flow restriction).
+*     NBCF        : Type of boundary condition from the sequence of
+*                   data group lines J1 - J4.  E.g., if NBCF = 2, use the
+*                   boundary condition indicated by the second group of
+*                   J1 - J4 lines.
+*============================================================================
+* FREE OUTFALL TO CONSTANT HEAD AT DOWNSTREAM END
+*    JFREE  NBCF
+I1   30083   1
+I1   50024   1
+I1   60024   1
+*============================================================================
+*     I2 line     :
+*     JGATE       : Number/name of outfall junctions with tide gate
+*                   (back-flow restriction).
+*     NBCG        : Type of boundary condition from the sequence of
+*                   data group lines J1 - J4.
+*============================================================================
+*    JGATE  NBCG
+*I2
+*============================================================================
+*      Boundary condition data are entered on the 'J' lines.
+*          Note: Repeat sequence of data groups J1-J4 for up to 20
+*                different boundary conditions.  Appearance in sequence
+*                (e.g., first, second... etc..) determines the value for
+*                NBCF and NBCG in data groups I1 and I2.
+*============================================================================
+*     J1 line  :
+*     NTIDE    : Boundary condition index.
+*                = 1 No water surface at outfalls (elevated discharge).
+*                    J2, J3 and J4 lines are not required.
+*                = 2 Controlling water surface at outfall at a constant
+*                    elevation A1 (group J2), ft [m].
+*                = 3 Tide coefficients (group J2) provided by user.
+*                = 4 Program will compute tide coefficients.
+*                = 5 Stage-history of water surface elevations input
+*                    by user.  Program uses linear interpolation
+*                    between data points.  Times must cover entire 
+*                    length of simulation.  
+*                = 6 Stage-history of water surface elevations input by
+*                    user on separate input file identified by NSCRAT(5).
+*                    File is set up to allow one tide history to be used
+*                    at more than one boundary location.  Each boundary
+*                    must be specified using the I1 or I2 and J cards.
+*                    Program checks that all boundary junctions appear
+*                    in the data file.
+*                    Only one type 6 boundary condition can be specified
+*                    on the J1 lines
+*                    Format of data file
+*                     Line 1 -
+*                              NTIDS - Number of locations with tides in
+*                                      data file.
+*                              NDUP  - Number of locations where the tidal
+*                                      elevation at another boundary is
+*                                      associated with a tide contained in
+*                                      this file.
+*                     Line 2 - JTIDS(1) JTIDS(2) JTIDS(3) up to JTIDS(NTIDS).
+*                              SWMM-Extran junctions associated with each
+*                              tidal record in the input file.
+*                     Line 3 - Repeat line NDUP times.
+*                              Do not use if NDUP equals 0.
+*                              JDUP - ID of outfall junction
+*                              JJTIDES - ID of corresponding outfall 
+*                              junction contained in output file to use.
+*                     Line 4 - One line for each observation.
+*                              year
+*                              month
+*                              day
+*                              hour - decimal hour
+*                              elevation1, elevation2, elevation3 up 
+*                                 to NTIDS
+*
+*============================================================================
+*  NTIDE
+J1   1
+*============================================================================
+*     J2 line   : Stage and/or Tidal Coefficients.
+*                 Note : NOT REQUIRED (OMIT) IF NTIDE(I) = 1 OR
+*                                            5 ON DATA GROUP J1.
+*     A1        : First tide coefficient, ft [m].
+*                 Constant elevation of NTIDE = 2 on line J1.
+*                 (This value ignored for NTIDE = 4.  Use 0.0.)
+*
+*         Note, no further parameters required if NTIDE = 2.
+*
+*     W         : Tidal period, hours. Required only if NTIDE(I) = 3 or 4.
+*                 Typical values for W are 12.5 and 25 hrs.  If NTIDE = 4,
+*                 one (e.g., diurnal for W = 25 hrs) or two (e.g., semi-
+*                 diurnal for W = 25 hrs) oscillations can be simulated,
+*                 per tidal period.  
+*                 W can be a multiple of the true tidal period if it is
+*                 desired that the Fourier series approximate a longer
+*                 time period without repeating.  E.g., if tidal period =
+*                 25 hrs, stages will repeat every 25 hrs; if
+*                 W = 50 hrs, stages will repeat every 50 hrs, etc.  
+*
+*                 Note : The next six fields are not required unless
+*                        NTIDE(I) = 3 on line J1.  See equation 2-14
+*                        for the definition of coefficients.
+*     A2        : Second tide coefficient, ft [m].
+*     A3        : Third tide coefficient, ft [m].
+*     A4        : Fourth tide coefficient, ft [m].
+*     A5        : Fifth tide coefficient, ft [m].
+*     A6        : Sixth tide coefficient, ft [m].
+*     A7        : Seventh tide coefficient, ft [m].
+*============================================================================
+*   A1    W    A2  A3  A4  A5  A6  A7
+*J2 798.0
+*============================================================================
+*     J3 line   : Tidal/Stage Information if NTIDE = 4 or 5 on line J1.
+*
+*     KO        : Type of tidal input.
+*                 = 0 Input is in the form of a time series of NI tidal
+*                     heights.  This parameter is not used (value ignored)
+*                     if NTIDE equals 5. 
+*                 = 1 Input is in the form of the high and low water
+*                     values found in the tide tables,
+*                     (HHW, LLW, LHW and HLW).  NI must be 4, and the 4
+*                     time-stage pairs must fall within the period, W.  
+*                 = 2 Input time history of tidal values from separate input
+*                     data file.  NI and DELTA are not used but values must
+*                     be supplied.  Data are read from file associated with
+*                     scratch file number 4.
+*                     File is set up to allow one tide history to be used
+*                     at more than one boundary location.  Each boundary
+*                     must be specified using the I1 or I2 and J cards.
+*                     Program checks that all boundary junctions appear
+*                     in the data file.
+*                     See J1 line for the data file format.
+*
+*     NI        : Number of information points.  Maximum = NTVAL.  See
+*                 initial print-out for value set during compilation.  
+*     NCHTID    : Tide information print control.
+*                 = 0 Do not print information.
+*                 = 1 Print information on tide coefficients
+*                     or stage history.
+*     DELTA     : Convergence criterion (default = 0.005 ft) for fitting
+*                 the tidal function, ft [m].  Not required for NTIDE = 5.
+*============================================================================
+*J3
+*============================================================================
+*     J4 line   : Time and stage information if NTIDE = 4 or 5 on line J1.
+*     TT        : Time of day, first information point, hours.
+*                 (Increase hours past 24 if necessary.)
+*     YY        : Tide/stage at time above, ft [m].
+*                  Note: Enter 5 pairs of time and stage information per
+*                        data line until NI points are listed.  Include
+*                        group identifier on each line.
+*============================================================================
+*J4
+*============================================================================
+*      'K' data lines contain user input hydrograph information.
+*                 Enter data only if NJSW > 0 on line B3.
+*============================================================================
+*     K1 line   :
+*     NINC      : Number of input junctions and flows per line on line K3.
+*============================================================================
+*  NINC
+K1  5
+*============================================================================
+*     K2 line   : Hydrograph Junctions.
+*     JSW       : First input junction number for line hydrograph, or
+*                 junction name (enter in single quotes).
+*                 Note : Enter NINC junctions per line until NJSW junctions
+*                        are entered.  (Repeat the group identifier
+*                        on each line.)
+*============================================================================
+*      JSW1   JSW2   JSW3    etc.
+K2     30001  30004  30007  50009 60009
+*============================================================================
+*     K3 line   : User Input Hydrographs.
+*     TEO       : Time from start of simulation, decimal hours.
+*     QCARD(1)  : Flow rate for first input junction, JSW(1),
+*                                           ft3/s [m3/s].
+*                 Note : Enter TEO plus NJSW flows.  Enter TEO only on
+*                        the first line of multiple ("wrapped around")
+*                        lines.  Do not include group identifier K3 on
+*                        lines that are "wrapped around."  Repeat the
+*                        sequence for each TEO time.  Times do not have
+*                        to be evenly spaced; linear interpolation is
+*                        used to interpolate between entries.  The last
+*                        K3 line will signal the end of the user
+*                        hydrograph input.  The last TEO value should be
+*                        > length or = length of simulation.
+*==============================================================================
+* INPUT ZERO FLOW FOR 1 HR TO LET CONSTANT INFLOW INTO NATURAL CHANNELS
+* "WARM UP" THE NATURAL RIVER SECTIONS.  START TRIANGULAR HDYROGRAPHS AT
+* THREE UPSTREAM ENDS OF SEWERS AT TIME = 1 HR.
+*==============================================================================
+*   TEO  QCARD(1) QCARD(2) QCARD(3)    Single line entry.
+K3  0.0   0.0     0.0      0.0  0.0  0.0
+K3  5.0   15.0   18.0      9.0 2000.0 2000.0
+K3 10.0   0.0     0.0      0.0  0.0  0.0
+K3 99.0   0.0     0.0      0.0   0.0  0.0
+*==============================================================================
+*   End your input data set with a $ENDPROGRAM and a <CR> (carriage return)
+$ENDPROGRAM
+
+
