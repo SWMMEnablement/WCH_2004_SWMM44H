@@ -10,7 +10,88 @@ C=======================================================================
       INCLUDE 'PLTARY.INC'
       INCLUDE 'CONTR.INC'
       INCLUDE 'LAB.INC'
-C=======================================================================
+# PPLOT Subroutine Overview
+
+This document provides an extensive summary of the Fortran subroutine PPLOT, which is responsible for plotting a graphical array with dimensions 51 × 101. The subroutine handles both symbol assignment within the array and formatted output for display, including titles, labels, and plot outlines.
+
+---
+
+## File Information
+
+- **File Name:** PPLOT.md
+- **Location:** `/C:/Users/dickinro/OneDrive - Autodesk/Documents/WCH_2004_SWMM44H/WCH_2004/PPLOT.md`
+
+---
+
+## Key Components and Structure
+
+### 1. Header Comments
+- **Purpose:** Describes the subroutine’s role in printing and symbol assignment for a 2D array of points.
+- **Modification Note:** Last modified in March 1988 by Red.
+
+### 2. Included Files
+The subroutine includes several external files:
+- **TAPES.INC:** Likely contains tape or file handling definitions.
+- **PLTARY.INC:** Contains definitions for the plotting array and related variables.
+- **CONTR.INC:** Might include variable or constant definitions.
+- **LAB.INC:** Provides label definitions for the output.
+
+### 3. Variable Declarations and Data Initialization
+- **ALPLOT** and **SYM:** 
+    - `ALPLOT` is a character variable (length 10).
+    - `SYM` is an array holding symbols for various plot points, e.g., plotting characters such as `*`, `+`, `X`, etc.
+- **DATA Statement:** Initializes the `SYM` array which assigns specific symbols to index positions.
+
+### 4. Main Execution Flow
+
+#### Symbol Placement (Labels: 10 and 240)
+- **Conditional SELECT:** 
+    - The subroutine checks the value of `K` (likely from external input) using a computed branch (`IF(K-99) 10,20,240`), leading to three code paths.
+    - **Case at Label 10:** 
+        - Assigns a specific symbol (`SYM(K)`) to a designated array position.
+        - Returns immediately thereafter.
+- **Label 240 (Outline Initialization):**
+    - Iterates over the array dimensions to assign default symbols along the borders.
+    - Sets left/right boundaries and top/bottom edges with specific symbols from the `SYM` array.
+
+#### Array Printing and Labeling (Labels: 20 to 190)
+- **Loop Over Array Rows:**
+    - Uses a main DO loop from 1 to 6 for printing each row with corresponding labels.
+    - Depending on the value `YLAB(1)`, a specific formatted write statement (`FORMAT 90, 95, or 100`) is chosen.
+- **Intermediate Loops:**
+    - Additional nested loops (using labels 170 and 180) process further rows between main label printing.
+    - Special conditions check rows `24`, `26`, and `28` to print vertical markers (`VERT1`, `VERT2`, `VERT3`).
+- **Final Print Statements:**
+    - After processing the array, additional formatted output is generated:
+        - Axis Labels (`XLAB`)
+        - Plot location or configuration information (`NPLOT`, `ALPLOT`, and horizontal labels `HORIZ`).
+        - Plot title (`HTITLE`).
+
+### 5. Formatting Definitions
+A series of FORMAT statements define how to print the array and associated labels:
+- **General Title Formats:** Used for printing headers and footers.
+- **Numeric Formats:** Formats for printing numeric labels with precision (e.g., `F14.3`, `1PE14.2`).
+- **Specialized Formats:** Specific layouts for vertical markers and plot outlines.
+
+---
+
+## Subroutine Summary
+- **Primary Function:**  
+    - Assigns symbols to elements in a 2D plotting array.
+    - Prints the complete array along with titles and labels using formatted output.
+- **Control Flow:**  
+    - Uses conditional branching (`IF` and computed `SELECT`) to handle different formatting and output scenarios.
+- **Loop Constructs:**  
+    - Iterates over array dimensions using nested DO loops for both assigning values and printing.
+- **Output Preparation:**  
+    - Involves initializing a plot outline and ensuring that boundaries are visually distinct with special symbols.
+- **Importance:**  
+    - Provides an early example of Fortran routines for graphical output and formatted printing, which can be used in legacy scientific and engineering applications.
+
+---
+
+This comprehensive summary converts the original Fortran source code into a clear markdown format, explaining the structure and purpose of each section. Any insertion of additional content for plotting operations should follow these summarized guidelines.
+
       CHARACTER ALPLOT*10,SYM(9)*1
       DATA SYM/'*','+','''','X','.','2',' ','I','-'/
 C=======================================================================

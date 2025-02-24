@@ -9,7 +9,61 @@ C     Updated 4/93 by WCH to correct land-use input and print-out
 C       from groups L1 and L2 and slight format modifications.
 C     WCH, 9/3/93. Add quality input for infiltration/inflow.
 C     WCH (Warren Chrusciel), 9/28/93.  Fix metric conversion for QFACT3.
-C     WCH, 9/29/93.  Add warning and code for too many J2 lines.
+# QHYDRO Subroutine Overview
+
+This document provides an extensive summary of the Fortran subroutine QHYDRO. Originally developed in 1981 and updated several times through the 1990s and 2000s, the subroutine handles the quality simulation within a runoff block.
+
+## History & Updates
+- **1981** – Initial creation by R. Dickinson.
+- **1990** – Last update noted at the time.
+- **1993** – Modifications to land-use input, print-out for groups L1 and L2, and an added quality input for infiltration/inflow.
+- **1995** – Introduced warning messages for specific line values.
+- **1996** – Corrected metric conversions.
+- **1999** – Increased the number of constituents.
+- **2000–2001** – Expanded variables for overland flow quality, BMP removal input for channels/pipes, and modified loops for subcatchments.
+
+## Structure & Organization
+
+### Included Files and Dimensions
+- **Included Modules:** The subroutine uses several include files (`TAPES.INC`, `INTER.INC`, `TIMER.INC`, etc.) to modularize constants, timer routines, detailed parameters, quality data, and new legacy constants.
+- **Array Dimensions:** The subroutine defines multiple arrays (e.g., `XINJ2`, `RJLAND`, `XINJ3`, `DNQS`, `RNQS`, etc.) that store injection parameters, quality ratios, default limits, and other quality-associated coefficients.
+- **String Variables:** Character variables for naming (e.g., `KGNAME`, `JDLINK`, etc.) help manage textual outputs and links.
+
+### Data Group Reading and Error Handling
+- **M1, JJ, and J1 Groups:** The subroutine begins by reading control codes from the input file. It checks for errors such as missing quality data by examining special flag lines (e.g., `'M1'`, `'JJ'`, `'J1'`).
+- **Input Validation:** If quality simulation is initiated without required data, or if parameters exceed expected ranges, the code calls an error routine (`CALL ERROR`) to terminate processing.
+- **Dynamic Land Use Handling:** The code reads land use information, adjusts default limits and ratios, and manages multiple input lines. Warning messages are issued if there are more J2 lines than permitted, ensuring that the quality data remains consistent.
+
+### Quality Constituent Processing
+- **Quality Constituent Input (Group J3):** Data regarding quality constituents, such as names, units, dimensions, calculation methods, and coefficients, are carefully read in. The subroutine allows for dynamic default settings or alternative ratios based on the input method codes.
+- **Quality Output:** Using formatted output statements, the subroutine prints detailed constituent data, including washoff parameters, coefficients, and linkage information. It includes conditions to suppress additional print-out if optional printing flags are not set.
+
+### Unit Conversions and Calculations
+- **Metric to U.S. Conversion:** The subroutine adjusts injection parameters and physical properties from metric units to U.S. customary measures. Specific conversion factors (e.g., using 25.4, 35.315, and other constants) are applied to parameters such as washoff coefficients and catch basin volumes.
+- **Erosion and Watershed Calculations:** Separate sections deal with erosion input data (group K1) and compute factors like length gradient, soil loss, and partial USLE values. These calculations are adjusted based on metric criteria and further output is formatted.
+- **Subcatchment Quality Loads:** The later part of the subroutine focuses on processing subcatchment data groups L1 and L2. Here, land use fractions and load calculations are performed, ensuring the sum of fractions is normalized to unity with error checking for discrepancies.
+
+### Additional Data Groups
+- **Groups J4, J5, J6, and J7:** 
+      - *J4* handles fractional relationships among other constituents.
+      - *J5* and *J6* read groundwater and infiltration/inflow quality data, respectively.
+      - *J7* focuses on BMP removal fractions. It checks for matching channels/pipes, issues warnings when a match is not found, and continues reading additional lines to accommodate multiple entries.
+
+### Output Formatting
+- **Fortran Format Statements:** A series of detailed format statements format the output for each quality and erosion data group. These include headers, variable labels, and specific numerical formatting to ensure readability.
+- **Dynamic Page Headings:** There is logic to conditionally print new page headings if the erosion output exceeds specified numbers of lines, ensuring that the final report stays well organized.
+
+## Summary
+The QHYDRO subroutine is a critical component in simulating and processing water quality data within a hydrological modeling framework. It:
+- Reads various groups of input data with rigorous error-checking.
+- Adapts dynamic defaults and ratios for both land use and constituent concentrations.
+- Performs detailed unit conversions to handle both metric and U.S. customary units.
+- Integrates erosion calculations and watershed load computations.
+- Outputs formatted results with carefully designed Fortran formats.
+- Issues warnings for non-conforming data (like excessive J2 lines) and ensures continuous processing.
+
+This comprehensive markdown summary captures the design, updates, and the operational flow of the QHYDRO subroutine, offering insight into its modular structure and critical role in water quality simulation.
+
 C     WCH, 11/15/93.  Change loop for IEND to NQSS + 2 from NRQ + 2.
 C     WCH, 10/19/95.  Add warning messages for L1 and M1 lines.
 C     WCH, 8/14/96.  Correct units conversion for RCOEF for KWASH > 0.

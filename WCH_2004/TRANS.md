@@ -11,7 +11,139 @@ C       file.
 C     WCH (CDM - Chuck Moore), 8/93.  Check for subscript out of range
 C       and not enough R1 lines.
 C     WCH, 10/6/93.  Include storage unit pollutants in initial quality
-C       load summary.
+# Transport Subroutine (TRANS) Overview
+
+This document summarizes the functionality and structure of the TRANS subroutine from the University of Florida Transport Model. The code, originally written in Fortran, implements the main computational loops for water quality and flow simulation. Its extensive history of modifications is documented within the comments.
+
+---
+
+## 1. Initialization and Declarations
+
+- **Inclusions:**  
+      The subroutine begins by including several header files (e.g., TAPES.INC, INTER.INC, STIMER.INC, etc.) which provide definitions for global variables, file I/O routines, and simulation parameters.
+
+- **Variable Dimensions:**  
+      Arrays are allocated for flow variables (QI, QO, QO1, QO2), surge storage, pollutant tracking (PFILEI, PFILEO), and more. Also, physical parameters such as slopes, distances, and geometry parameters are defined. Comments indicate adjustments—for example, changing array dimensions to accommodate a variable `MQUAL` (number of qualities).
+
+- **Constants and Equivalences:**  
+      Variables are associated using FORTRAN’s EQUIVALENCE statements to allow shared memory for different representations. A linear interpolation function, `QLINTP`, is defined to compute intermediate flow or quality values.
+
+---
+
+## 2. Data Input and Preprocessing
+
+- **Initial Data Input:**  
+      The subroutine calls `INTRAN` to read simulation inputs from an interface file. It then rewinds several scratch file streams (NSCRT1, NSCRT2, NSCRT7) to prepare for further processing.
+
+- **Array Initialization:**  
+      Arrays such as XNT (accumulation variables) and XNT27 (for type 27 quality split elements) are zeroed out. This step ensures that previous runs or uninitialized memory do not affect the current simulation.
+
+- **Calculation of Initial Conduit Volumes:**  
+      A loop over network elements initializes conduit variables including storage lengths, rates, and pollutant loads. Modifications in the comments reflect improvements such as changing volume/barrel calculations and the incorporation of storage unit pollutant loads.
+
+---
+
+## 3. Generating Output and Interface Data
+
+- **Interface File Write-Out:**  
+      The subroutine writes a header line for an interfacing model. It converts flow quantities using a metric conversion factor (`CMET`) and formats pollutant data appropriately.
+
+- **Time-Step and Quality Data:**  
+      An outer loop over time steps and an inner loop over network elements perform the simulation updates. These updates include:
+      - Updating simulation time and flow accumulators.
+      - Interpolating between successive inputs to compute intermediate values.
+      - Routing quality parameters through the network and updating pollutant concentrations.
+
+- **Handling R1 Input Lines:**  
+      Two modes are provided:
+      - **Multiple R1 Lines (IFLIP = 0):** Data is read per element with pollutant checking.
+      - **Single R1 Line (IFLIP = 1):** A consolidated input read occurs.  
+      The code rigorously checks for correct identification (using an 'R1' marker) and handles errors by writing to error streams and executing a stop.
+
+---
+
+## 4. Main Computational Loops
+
+- **Time Loop:**  
+      The outer loop iterates over a defined number of time steps (`NDT`), updating simulation time (TIME, TIMEHR, TIMDAY) and processing input data according to the current time.
+
+- **Element Loop:**  
+      For each time step, the subroutine loops over elements (using indices based on the internal network structure). Key operations include:
+      - **Flow Routing:**  
+            The calculation involves summing upstream flows, determining if a conduit is surcharging, and adjusting flow capacities.
+      - **Quality Routing:**  
+            Quality parameters (e.g., pollutant concentrations) are routed through each element with linear interpolation based on elapsed time.
+      - **Design Adjustments:**  
+            If elements (such as pipes) are found to be surcharging, the subroutine can invoke design routines:
+            - For circular conduits, diameters are increased.
+            - For rectangular conduits, widths are adjusted.
+            - Replacements may occur if an element’s design is not suitable.
+            
+- **Additional Calculations:**  
+      The code includes logic to handle monthly and hourly variations such as:
+      - Dry weather flow adjustments.
+      - Base-flow modifications.
+      - Surcharging statistics and output accumulation (using arrays such as XNT).
+
+---
+
+## 5. Output Generation and Post-Processing
+
+- **Output Tapes and Scratch Files:**  
+      After updating flows and qualities, the program writes:
+      - **Interface Outputs:**  
+            Generated with appropriate metric conversions for use by an interfacing model.
+      - **Scratch Tape Outputs:**  
+            Detailed records for printouts, including depth measurements and flow summaries.
+      
+- **Quality and Hydrograph Print Routines:**  
+      Conditional calls to external routines (`PRINTQ`, `PRINTF`) are made to produce formatted outputs of the hydrographs and pollutant loadings.
+
+- **Final Simulation Summary:**  
+      A section writes a final summary including:
+      - Ending date and simulation total time.
+      - Presentation of updated element parameters in a tabulated format with detailed format statements.
+      
+- **Formats:**  
+      Extensive FORMAT statements are included to ensure that output is well-aligned and contains descriptive headings. These formats are customized based on whether the metric system is used and whether the conduit design conventions differ.
+
+---
+
+## 6. Error Handling and Termination
+
+- **Error Codes:**  
+      The program includes error checking in several places. For instance, if a misidentified R1 line is encountered, or if an array subscript goes out of range, the subroutine writes an error message and calls the IERROR routine.
+      
+- **Finalization:**  
+      At the end, the subroutine calls `OTRAIN` to carry out any final processing before returning, ensuring that the simulation ends normally and outputs are correctly written.
+
+---
+
+## 7. Historical Modifications and Annotations
+
+- **Revision History:**  
+      Inline comments indicate updates made by various authors over time:
+      - Inclusion of metric conversions.
+      - Adjustments to handle additional quality components and storage unit pollutants.
+      - Updates to the design routine to prevent surcharging.
+      - Improvements to output formatting.
+      
+- **Legacy Comments:**  
+      Throughout the subroutine, legacy documentation remains, providing context for modifications (e.g., changes made in 1990, 1993, 1994, and updates by authors such as R.E.D., WCH, and others).
+
+---
+
+## Conclusion
+
+The TRANS subroutine is a comprehensive routine central to the transport model simulation. It:
+
+- Initializes and validates simulation inputs.
+- Performs iterative flow and quality routing with interpolation.
+- Adjusts conduit parameters dynamically via design modifications.
+- Outputs detailed simulation results for interface and print purposes.
+
+The code’s structure highlights a robust approach to water quality and flow simulation in a complex hydraulic network, reflecting decades of iterative improvement and adaptation.
+
 C     James L. Martin, AScI Corp., 10/93.  Provide code for writing out
 C       WASP linkage file.
 C     RED, 11/29/93.  Eliminate third argument in FIRST call statement.

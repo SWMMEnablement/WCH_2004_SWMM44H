@@ -5,7 +5,75 @@ C=======================================================================
 C     FINDS Q/QFULL (PSI) GIVEN A/AFULL (ALPHA) FOR FUNCTIONAL Q-A CURVE
 C
 C     UPDATED (NEW COMMON) BY W.C.H., SEPTEMBER 1981.
-C     USE QCURVE(4), NOT (3) FOR FLOW.  WCH, 7/6/01. 
+# Comprehensive Summary of the PSI Function
+
+This document summarizes the Fortran PSI function used for computing the flow ratio (PSI), defined as Q/QFULL, based on the area ratio (ALPHA = A/AFULL). Over several revisions, the code has been tuned to handle different channel geometries and ensure high numerical accuracy.
+
+## Key Features
+
+- **Input Validation:**  
+      The function immediately returns if ALPHA ≤ 0, ensuring no invalid computations proceed.
+
+- **Channel Type Determination (NTPE):**  
+      Based on the variable NTPE (derived from an external array `NTYPE`), the function handles multiple cases:
+      
+      1. **Low Flow Handling (NTPE = 1):**  
+             - Uses the external subroutine `CIRCLE` to obtain high-accuracy PSI values at very low flows.
+
+      2. **Rectangular Conduits (NTPE = 2):**  
+             - Checks if ALPHA exceeds a threshold (`ALFMAX`).  
+             - Computes PSI using a modified formulation involving a scaling factor calculated from parameter R and a power expression.
+
+      3. **Modified Basket-Handle (NTPE = 10):**  
+             - Determines the effective area (`AA`) and compares it to a geometry threshold.  
+             - Either computes PSI using a roughness-controlled approach or proceeds with a normalized calculation based on modified variables.
+
+      4. **Rectangular with Triangular Bottom (NTPE = 11):**  
+             - Divides the computation based on whether the computed area is below a critical value (AB).  
+             - Uses power functions for low values and interpolation when ALPHA exceeds a set maximum (`ALFMAX`).
+
+      5. **Rectangular with Round Bottom (NTPE = 12):**  
+             - Offers dual computation paths:  
+                   - For higher effective areas, either applies a similar threshold-based adjustment (using ALFMAX) or performs a two-step calculation involving derivatives of geometric parameters.  
+                   - For very low effective areas, leverages the `CIRCLE` routine, followed by scaling with a dedicated parameter.
+             - In some cases, it also defines interpolated values (using the QNORM array) based on discretized intervals.
+
+      6. **Trapezoid (NTPE = 13):**  
+             - Involves solving for an intermediate variable via a quadratic-like equation (using a square root) before applying a power function to get PSI.
+
+      7. **Tabular PSI Calculation (NTPE = 16):**  
+             - Primarily used for power functions and natural channels.  
+             - Branches based on whether PSI is calculated directly from the QCURVE data (using the fourth column, per revision note “USE QCURVE(4), NOT (3) FOR FLOW.  WCH, 7/6/01”) or by interpolating using the QNORM and ANORM arrays.
+             - Contains boundary checks (e.g., limiting interpolation indices) to guard against out-of-range errors.
+
+## Included External Resources
+
+The function relies on several INC files that supply necessary parameters, coefficients, and arrays:
+- `TAPES.INC`
+- `PSIDPS.INC`
+- `TABLES.INC`
+- `HUGO.INC`
+- `NEW81.INC`
+- `FLODAT.INC`
+
+These files provide the definitions for parameters such as P4, P5, P7, GEOM1-3, AFULL, and many others that are essential for the various computations.
+
+## Revision Highlights
+
+- **Updated Flow Calculation:**  
+      A crucial update noted in the comments specifies the usage of `QCURVE(4)` instead of `QCURVE(3)` for flow computations. This change, highlighted in the comment:
+      
+      "C     USE QCURVE(4), NOT (3) FOR FLOW.  WCH, 7/6/01."
+      
+      ensures that the correct dataset column is used, thereby improving the accuracy of PSI values determined via tabular interpolation.
+
+- **Error Handling:**  
+      Protective measures, such as immediate returns and index bounds checking (for interpolation cases), are in place to handle unlikely but possible input errors.
+
+## Conclusion
+
+The PSI function is a robust tool for computing flow ratios across a variety of channel profiles using both analytical formulas and tabular interpolation. Its case-specific logic allows for targeted computations that account for low-flow special cases, different geometric configurations, and updated computational routines to enhance accuracy. This detailed documentation serves as both a technical reference and a guide for further modifications or integrations.
+ 
 C     FIX MAX NUMBER OF TABULAR POINTS FOR UNLIKELY BUT POSSIBLE ERROR.
 C       WCH, 5/24/02.
 C=======================================================================

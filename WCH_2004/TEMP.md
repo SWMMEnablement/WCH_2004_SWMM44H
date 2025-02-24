@@ -10,7 +10,61 @@ C     WCH, 7/27/04. Fix subscript of PAN.
 C     WCH, 7/27/04. Major adjustments for units. 
 C=======================================================================
       INCLUDE 'TAPES.INC'
-      INCLUDE 'INTER.INC'
+      # TEMP Subroutine Overview
+
+      This Fortran subroutine named **TEMP** processes meteorological data through several phases. It reads input from designated files, performs data preprocessing and conversion, calculates statistical measures for temperature, evaporation, and wind speed, and finally writes the formatted results to an interface file.
+
+      ## Key Components
+
+      ### Included Modules
+      - **TAPES.INC** – Sets up file I/O routines.
+      - **INTER.INC** – This inclusion (inserted here) handles additional interface-related definitions.
+      - **STIMER.INC** – Manages timing and scheduling routines.
+      - **TEW.INC** – Contains supplemental processing subroutines.
+
+      ### Data Structures & Variables
+      - **Arrays for Monthly Values:**  
+            - `TMEAN(12)`, `TMIN(12)`, `TMAX(12)` store calculated mean, minimum, and maximum temperatures.
+            - `MMNTH(12)` holds month names.
+      - **Pan Coefficients:**  
+            - An array (e.g., `PAN`) used to adjust evaporation values.
+      - **I/O Parameters:**  
+            - File identifiers (e.g., `JIN`, `JOUT`) and error handling via `IERROR`.
+
+      ### Data Input and Verification
+      - **Reading Data Groups:**  
+            - **Group A1:** Reads text headers like station and title.
+            - **Group B1 & B2:** Reads numerical data including dates (as 8-digit numbers: YEAR, MONTH, DAY), input formats, and meteorological readings.
+      - **Date Adjustments:**  
+            - Converts short year formats to four-digit years.
+            - Adjusts for leap year scenarios when dealing with February.
+
+      ### Computation and Conversion
+      - **Temperature Statistics:**  
+            - Initializes temperature arrays and updates them by scanning day-by-day records to compute minimum, maximum, and mean temperatures.
+      - **Evaporation & Wind Calculations:**  
+            - Incorporates pan coefficients into evaporation data.
+            - Converts units depending on whether U.S. customary or metric units are in use.
+      - **Control Logic:**  
+            - Conditional tests (e.g., based on `KTYPE` and `IFORM`) direct alternate processing paths, such as handling user input versus weather service file input.
+
+      ### Formatted Output
+      - **Output Formats:**  
+            - Several FORMAT statements ensure the output is neatly organized for different data types (e.g., temperature, evaporation, wind speed).
+      - **File Writing:**  
+            - Data is written to both a primary output file and an interface file with values converted to required units.
+      - **User Feedback:**  
+            - Status messages and warnings are displayed on the terminal to signal the progress and any discrepancies (like mismatched units).
+
+      ## Control Flow and Final Steps
+      - **Loop Constructs:**  
+            - Nested loops iterate over months and days to process data records.
+      - **Error Management:**  
+            - Uses defensive programming with error labels and subroutine calls for managing I/O failures (`CALL IERROR`).
+      - **Termination:**  
+            - Updates the processing year and closes file streams properly before exiting the subroutine.
+
+      This comprehensive summary provides insight into how the TEMP subroutine integrates data input, computation, and formatted output into a unified process for managing weather-related data.
       INCLUDE 'STIMER.INC'
       INCLUDE 'TEW.INC'
       DIMENSION TMEAN(12),TMIN(12),TMAX(12)

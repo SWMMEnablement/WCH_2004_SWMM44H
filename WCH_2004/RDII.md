@@ -8,6 +8,25 @@ cim 9/97 change to allow input of 12 parameters for months
      2 DREC(NTK,3,12),STORAGE(NTK,3,12),FLOWII(NW),CONCII(MQUAL),
      3 SUMRDII(MQUAL)
       COMMON/RDII2/RDTIM(2),NRDII,JRDDAY(2),RDFLOW(NTK,3,2),
+/**
+ * File Context:
+ *   - Originates from: /C:/Users/dickinro/OneDrive - Autodesk/Documents/WCH_2004_SWMM44H/WCH_2004/RDII.md
+ *
+ * Overview:
+ *   - The code snippet illustrates an initialization or configuration section.
+ *
+ * Details:
+ *   - IZERO(NTK, 3, 2):
+ *       * Likely represents a function or macro call initializing values for NTK.
+ *       * The numeric arguments (3, 2) may designate dimensions, modes, or configuration parameters.
+ *
+ *   - IIRDII, NNTK:
+ *       * These appear to be variable declarations or identifiers used subsequently.
+ *
+ * Note:
+ *   - Further context from the overall codebase is necessary to fully understand the roles
+ *     and interactions of IZERO, NTK, IIRDII, and NNTK.
+ */
      1 IZERO(NTK,3,2),IIRDII,NNTK
       DOUBLE PRECISION  CNTRDII,CNRAIN,CNEXCESS,SUMOFRS
       COMMON/RDII3/TSTEP,TSTEP2,IRATIOS,RDIIAREA,RRMAX

@@ -7,7 +7,54 @@ C	CALLED BY TRANSX NEAR LINE 613
 C
 C     WCH (RED and L. Rossman), 7/20/04. Fix second DELQ4 calc. 
 C=======================================================================
-C     THIS IS SUBROUTINE YROUTE OF THE SEWER MODEL
+# Subroutine YROUTE: Comprehensive Summary
+
+This Fortran subroutine is part of a sewer model and is responsible for simulating water flow routing using a modified Euler solution of the motion and continuity equations. The code is structured to improve numerical consistency by storing previous values and by processing calculations in two primary steps: half-step and full-step evaluations.
+
+## Key Features
+
+- **Numerical Consistency**  
+      - Reads previous values for variables (e.g., SUMQ, SUMQS, SUMAL, and AS) to maintain consistency.
+      - Uses partial sum arrays and careful summing strategies to reduce numerical errors.
+
+- **Two-Step Flow Calculation**  
+      - **Half-Step Calculations:**  
+            - Initializes continuity parameters and computes intermediate water head and flow values.
+            - Uses averaged parameters and calls routines like `OGATES` to determine orifice settings.
+            - Applies corrective adjustments based on flow conditions such as normal versus supercritical flow.
+
+      - **Full-Step Calculations:**  
+            - Refines flows and heads using updated intermediate values.
+            - Adjusts and validates flow direction to prevent reversals.
+            - Computes additional loss terms (entrance, exit, and other losses) and integrates them into the momentum equations.
+
+## Computational Techniques
+
+- **Parallel Computing Directives:**  
+      - Utilizes OpenMP directives to achieve parallel processing on loops that calculate flow parameters.
+      - Splits critical sections for combining partial sums, reducing lock contention during computations.
+
+- **Flow Adjustments and Error Handling:**  
+      - Implements checks for normal flow regimes, handling of surcharge conditions, and convergence of iterative solutions.
+      - Includes safeguards to avoid division by zero and to maintain physically realistic values (e.g., enforcing flow reversal prevention).
+
+- **Iterative Convergence:**  
+      - Sets up iterations for surcharge conditions where the error (difference between computed and target values) is monitored.
+      - Iterates until the error is within a set tolerance or until the maximum number of iterations is reached.
+
+## Structure and Modularity
+
+- **Modular Include Files:**  
+      - The subroutine incorporates several external files (e.g., `TAPES.INC`, `HYFLOW.INC`, `BND.INC`) that likely provide definitions for arrays, constants, and helper subroutines.
+      
+- **Clear Sectioning with Embedded Comments:**  
+      - Extensive inline comments describe each block of code, detailing calculation steps, conditions, and assumptions.
+      - Comment markers (such as `CIM START/END` and OpenMP directives) enhance readability and provide context for the computational methods applied.
+
+## Overall Purpose
+
+The subroutine YROUTE is designed to simulate water flow through conduits and junctions in a sewer system. Its comprehensive approach ensures accurate head and flow calculations by integrating various hydrodynamic considerations and numerical methods. The use of parallel loops, detailed error checking, and iterative refinement exemplifies robust engineering practices for complex hydraulic models.
+
 C     IT PERFORMS THE MODIFIED EULER SOLUTION OF THE
 C     MOTION AND CONTINUITY EQUATIONS LAST UPDATED NOVEMBER, 1989
 C=======================================================================

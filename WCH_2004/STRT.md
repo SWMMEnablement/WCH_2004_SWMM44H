@@ -18,7 +18,134 @@ C       AND ADD PRINT-OUT OF PRINT AND DATE/TIME VARIABLES.
 C     WCH, 2/27/95.  CORRECT PRINT-OUTS OF POLLUTANT NAME, UNITS.
 C     WCH, 7/7/95.  CORRECT METRIC PRINT-OUT OF TRIBA.
 C     WCH, 7/7/95.  MAKE CORRECTIONS FOR METRIC CONVERSION ON INTERFACE
-C       FILE.
+# Storage/Treatment Model Code Overview
+
+This markdown summarizes a legacy Fortran program that implements a storage/treatment model. The code manages input/output files, processes various data groups, performs linear interpolation for flow and pollutant values, and computes settling velocities for particulates. The summary below details the structure and key functionality.
+
+---
+
+## File Metadata and Header Information
+
+- **Source File:** `/C:/Users/dickinro/OneDrive - Autodesk/Documents/WCH_2004_SWMM44H/WCH_2004/STRT.md`
+- **History:**  
+      - Written by Stephan J. Nix  
+      - Modified by Robert E. Dickinson and others (WCH, CIM, ROB JAMES) through many updates ranging from 1981 through 2004
+- **Purpose:** Simulate a combined storage/treatment process with support for both U.S. customary and metric units.
+
+---
+
+## Code Structure
+
+### 1. Declaration and Inclusion
+
+- **Subroutine Declaration:** `SUBROUTINE STRT`
+- **Header Comments:** Extensive comment block with version history, attribution, and modifications.
+- **Includes:**  
+      - `TAPES.INC`
+      - `STIMER.INC`
+      - `INTER.INC`
+      - `S1.INC`
+- **Dimension Declarations:**  
+      Arrays for pollutants, time series, and storage parameters are declared (e.g., `IPOLL`, `PCAR`, `POLL`, `TEMP`).
+
+### 2. Data Initialization
+
+- **Data Statements:**  
+      - Initialization of common values such as `ANS` (answers “NO”/“YES”) and month abbreviations in `DMON`.
+- **Setup Routines:**  
+      - Definition of the linear interpolation function using a statement function.
+
+### 3. File Operations
+
+- **Input/Output File Setup:**  
+      - Open unformatted scratch or unknown status files based on file names.
+      - Handles both external file inputs and interface file outputs.
+
+### 4. Reading Data Groups
+
+The code reads several structured data groups from the input file:
+      
+- **Group A1:** Reads titles and a general control card.
+- **Group B1:** Reads main control parameters (e.g., **JNS**, time steps, metric flag, tributary area conversions).
+- **Group C1 and C2:**  
+      - Fetches date, time, and detailed print control parameters including start and end dates.
+- **Group D1:** Reads monthly evaporation or environmental inputs.
+- **Group E1, E2, and E3:**  
+      - Pollutant parameters such as dimensionality, names, and units.
+      - Pollutant fractions and particle size/velocity distributions.
+- **Interface File Header:**  
+      - Reads additional information required to set up the simulation run.
+
+### 5. Interpolation and Flow Computations
+
+- **Linear Interpolation:**  
+      The function `QLINTP` is used repeatedly to interpolate flows and pollutant loads over a time interval.
+- **Flow Conversion:**  
+      - Conversion factors (`QCONV`, `PCONV`) are applied based on unit settings.
+      - Handles both U.S. customary (cfs) and metric (cms) values.
+- **Pollutant Loads:**  
+      - Uses interpolation and conversion to calculate time-averaged concentrations.
+      
+### 6. Main Time Loop
+
+- **Time Step Processing:**  
+      - The simulation advances in discrete time steps (from `1` to `NDT`).
+      - For each time step, the routine updates time variables and calls subroutines (e.g., `STIME`, `DATED`).
+- **Interface File Synchronization:**  
+      - Reads additional data blocks during the loop and interpolates between values obtained from the import file.
+- **Data Echoing:**  
+      - Detailed print formats are used to write echo information to the output file (`N6`), ensuring a trace of simulation parameters.
+
+### 7. Settling Velocities and Error Handling
+
+- **Settling Velocity Computation:**  
+      - A dedicated section computes settling velocities for particles based on density, particle size, viscosity, and drag coefficients.
+      - Several iterations adjust the drag coefficient (`CD`) to ensure convergence.
+- **Error Handling:**  
+      - Conditional stops if certain physical summations or data integrity conditions are not met.
+      - Custom error messages formatted with specific error codes (see formats `1490`, `2570`).
+
+### 8. Finalization
+
+- **Output Section:**  
+      - After simulation loops, the code writes summary information, including finishing flow and pollutant load values.
+      - Closes with a call to a cost subroutine (`STCOST`) if required.
+- **End Statements and Format Definitions:**  
+      - Extensive format definitions for printing simulation details, warnings, and errors are provided.
+      - Proper termination using `RETURN` and an error jump (`CALL IERROR`).
+
+---
+
+## Format Statements
+
+The program uses numerous formatted output statements defined towards the end. These formats control the appearance of printed simulation data:
+      
+- **Headers:**  
+      - Clear demarcation between simulation steps and echo prints.
+- **Time Formats:**  
+      - Detailed layouts for printing dates, times, and Julian dates.
+- **Error Formats:**  
+      - Special formats for warning messages and termination conditions (e.g., `4005`, `6550`).
+
+---
+
+## Summary of Functionality
+
+- **Simulation Core:**  
+      Reads initial conditions, processes each time step with updated flow and pollutant concentrations, and interpolates interface data.
+- **Unit Conversion Flexibility:**  
+      Handles both customary and metric units with dynamic conversion factors.
+- **Robust Data Input Handling:**  
+      Multiple data groups ensure comprehensive parameter coverage.
+- **Error and Warning Management:**  
+      Built-in error checks and print outputs provide traceability and diagnostics.
+
+---
+
+## Conclusion
+
+This Fortran subroutine (`STRT`) represents a comprehensive simulation model for water treatment and storage, intricately managing data flow, unit conversions, and physical computations across multiple time steps. Its modular structure—with clear demarcations for data reading, processing, and output—facilitates detailed simulation of environmental and hydraulic processes, while the extensive inline documentation aids in maintenance and further modifications.
+
 C     CIM  4/99 MODIFIED TO INCREASE NUMBER OF CONSTITUENT FROM 10
 C          TO MQUAL.
 C     WCH 4/18/02. ERROR MESSAGE FOR INCOMPATIBLE $ANUM.

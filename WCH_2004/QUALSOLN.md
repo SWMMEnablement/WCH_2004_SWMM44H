@@ -7,7 +7,104 @@ C       routing using complete mixing solutions.
 C     Called from Sub. QUAL.  Replaces code at end of QUAL.
 C     Created 7/6/01 by Wayne Huber in order to provide linked DO-BOD-
 C       NOD simulation. 
-C     Follow procedure similar to that used in Sub. SHEDQUAL.
+## Extensive Summary of the QUALSOLN Subroutine
+
+This section provides an extensive overview of the Fortran subroutine `QUALSOLN` used to solve the transport of pollutants using a complete-mixing analytical solution. The summary explains the procedure, the parameters involved, and how the solution is applied to different water quality constituents.
+
+---
+
+### Overview
+
+- **Purpose:**  
+	The subroutine calculates the outflow concentration of various pollutants by integrating mass balance equations. It avoids numerical instability by using average values over the time step.
+
+- **Context:**  
+	The routine is called from the larger water quality simulation (referred to as Sub. QUAL) and is similar in approach to that used in Sub. SHEDQUAL. It handles both independent and linked constituent processes such as decay, removal, settling, and reaeration.
+
+- **Method:**  
+	The integration uses the equation:  
+	C = C_new * [1 − exp(-ARG)] + C_old * exp(-ARG)  
+	where:
+	- C_new is derived from inflow loads and first-order decay.
+	- C_old represents the concentration from the previous time step.
+	- ARG is a product involving the decay coefficient and the time step.
+
+---
+
+### Main Sections and Calculations
+
+1. **Initialization and Inclusion of Common Blocks:**
+	 - Includes external files for common variables (`TAPES.INC`, `TRANWQ.INC`, `HUGO.INC`).
+	 - Sets initial variables such as denominator (`DENOM`) and numerator (`TOP`).
+
+2. **Parameter Setup for Transport:**
+	 - **Denom Calculation:**  
+		 The denominator is computed as `(QAVG + DVDT) / VOL` to adjust for flow fluctuations.
+	 - **Average Conditions:**  
+		 The routine computes current channel parameters including surface area, average depth, and velocity for use in linked pollutant evaluations.
+
+3. **Pollutant-Specific Branching:**
+	 - **Ordinary Constituents (General Case):**
+		 - Adjusts `DENOM` by adding the decay coefficient.
+		 - Applies additional terms for constituents not linked to upstream processes.
+	 - **Special Cases:**
+		 - **CBOD (Carbonaceous BOD):**  
+			 Uses a specific decay transformation and adjusts for settling effects if applicable.
+		 - **NBOD (Nitrogenous Oxygen Demand):**  
+			 Similar treatment as for CBOD with its own decay constant.
+		 - **NO3-N:**  
+			 Involves an extra linkage term to account for decay from NOD, ensuring coupling between these constituents.
+		 - **DO (Dissolved Oxygen):**  
+			 Considers the oxygen deficit generated from BOD and NOD decay, and includes calculations for reaeration, sediment oxygen demand, and associated removal terms.
+
+4. **Numerical Integration and Exponential Term:**
+	 - **Exponential Decay Factor:**  
+		 A term `EXXP` is computed as exp(-ARG) (or set to 1 when ARG equals zero). This factor modulates the blend between the new (incoming) and old (existing) concentration values.
+	 - **Weighted Average:**  
+		 The final concentration (`C2NEXT`) is computed by blending the incoming load (normalized by the adjusted decay and removal factors) with the previous concentration.
+
+5. **Continuity and Mass Balance:**
+	 - The routine tracks overall mass lost or transformed by individual processes:
+		 - **Removal:**  
+			 Mass fraction removed due to BMP (Best Management Practices).
+		 - **Settling and Decay:**  
+			 Quantifies mass removal due to settling and first-order decay.
+		 - **Linked Processes:**  
+			 Adjusts for secondary effects (e.g., NOD decay contributing to NO3-N, oxygen deficit contributions from both CBOD and NBOD).
+
+6. **Handling Special Conditions:**
+	 - The subroutine ensures that:
+		 - Negative concentrations or denominators are corrected to avoid division errors.
+		 - Special cases like evaporation (though not active in the current transport block) are addressed by checking for negative `DENOM`.
+
+---
+
+### Final Processing and Return
+
+- **Output Update:**  
+	Updated concentrations are stored in the common block `CPOL2`, where:
+	- The first index represents the element.
+	- The second index differentiates between start and end-of-step concentrations.
+	- The third index corresponds to the pollutant type.
+	
+- **Mass Tracking:**  
+	Auxiliary variables accumulate removal, settling, decay, and reaeration contributions over the time step to maintain mass balance in the simulation. These are essential for subsequent continuity checks and overall water quality assessments.
+
+- **Return Statement:**  
+	Once all calculations and updates are complete, the routine finishes with a return, passing control back to the calling subroutine.
+
+---
+
+### Summary
+
+This subroutine is central to pollutant transport simulation. It:
+- Calculates changes in pollutant concentration over each time step using complete-mixing assumptions.
+- Integrates multiple processes such as decay, settling, reaeration, and BMP removal.
+- Handles both independent and linked constituents for water quality modeling.
+- Adjusts dynamically based on current flow and depth, ensuring that pollutant concentrations are updated accurately while conserving mass.
+
+This detailed summary encapsulates the structure and purpose of the `QUALSOLN` subroutine, providing a foundational understanding for further modifications or documentation.
+
 C     Correct for non-calc when there is zero flow and thus, zero
 C       DENOM.  WCH, 8/6/03.
 C=======================================================================

@@ -13,7 +13,97 @@ C     Option for zero evaporation during rainy time steps, WCH (CDM,
 C       Chuck Moore), 10/5/93.  Also slight change to print-out for
 C       IVAP parameter.
 C     Metric correction, WCH (RED), 11/12/93, for print of QFULL.
-C     Correction to print alphanumeric tributary subareas in linkage
+# RHYDRO1 Fortran Subroutine Summary
+
+This section provides a complete and extensive summary of the RHYDRO1 subroutine, which is part of a hydrologic simulation program. Below is an overview of its functionality and structure:
+
+## Overview
+- **Purpose:**  
+      Implements the runoff block input and computation routines for hydrologic modeling.
+- **Context:**  
+      Called by the runoff driver routine; handles reading inputs, performing data validations, computing channel flows, and establishing connectivity.
+
+## Structure & Key Sections
+
+### 1. Module Inclusion and Declarations
+- **INCLUDES:**  
+      Several include files (e.g., TAPES.INC, INTER.INC, DETAIL.INC) provide necessary declarations and definitions.
+- **Variable Declarations:**  
+      Character arrays, REAL variables, dimensions, and DATA statements are used to initialize labels and units for printing and computation.
+
+### 2. Reading General Simulation Information
+- **Data Group A1:**  
+      Reads titles and general header information.
+- **Date and Time Setup:**  
+      Processes start date, time components, and computes the zero reference time (`TZERO`).
+
+### 3. Infiltration, Evaporation, and Quality Parameters
+- **Data Group B1:**  
+      Reads key parameters such as infiltration method indicator and evaporation options.
+- **Evaporation Handling (IVAP):**  
+      Distinguishes between different evaporation schemes, including the option to disable evaporation during rainfall.
+- **Quality Simulation:**  
+      Sets flags for pollutant or quality simulations based on input.
+
+### 4. Additional Data and Error Checking
+- **Data Group B2 and B3:**  
+      Reads parameters involving groundwater limits, detailed date handling (using double precision for long dates), and handling of regeneration and zero percent impervious areas.
+- **Error Handling:**  
+      Uses error routines (e.g., CALL IERROR) to address read failures.
+
+### 5. Rainfall and Snow Input Data
+- **Snow and Rainfall:**  
+      Invokes subroutines for snowmelt (`SNOWIN`) and rainfall intensity histogram (`MKRAIN`).
+
+### 6. Evaporation Data Processing (Data Group F1)
+- **Different Modes:**  
+      Adjusts the evaporation rate based on the metric or US units.
+- **Format and Computation Adjustments:**  
+      Converts units and applies corrections (e.g., dividing evaporation by day lengths).
+
+### 7. Channel and Pipe Data
+- **Reading Channel Data (Data Groups G1 and G2):**  
+      Processes input for channels/pipes including names, geometric parameters, and print formatting.
+- **Computation of Flow (QFULL):**  
+      Computes channel/pipe flow characteristics using cross-sectional geometry and hydraulic formulas.
+- **Initial Depth Validation:**  
+      Verifies that initial water depth does not exceed channel dimensions.
+      
+### 8. Connectivity and Subcatchment Networks
+- **Linking Channels and Inlets:**  
+      Establishes connectivity tables among channels, pipes, and subcatchments.
+- **Validation:**  
+      Checks for matching names (or IDs) and issues error messages if connectivity rules are violated.
+- **Additional Inlet Handling:**  
+      Creates dummy channels when necessary to account for extra inlets or routing paths.
+
+### 9. Output and Header Printing
+- **Detailed Print Formats:**  
+      Provides multiple format statements for different output sections (runoff, channel connectivity, and subcatchment summaries).
+- **Connectivity Summary:**  
+      Prints detailed summaries of channel/pipe and subcatchment connections, including tributary lists and error prompts when maximum connections are exceeded.
+
+### 10. Correction to Print Alphanumeric Tributary Subareas in Linkage
+- **Specific Correction:**  
+      Adjustments are made to ensure that tributary subareas, including those with alphanumeric identifiers, are printed correctly in the final connectivity listings.  
+      - This correction ensures consistency in channel-to-subarea links in both the printed output and during connectivity validations.
+
+### 11. Final Operations
+- **Subcatchment Data:**  
+      Calls the `CATCH` subroutine to read subcatchment-specific input.
+- **Snowmelt and Additional Connectivity:**  
+      Handles remaining snowmelt calculations and final connectivity corrections before program termination.
+- **Return Statement:**  
+      Ends the RHYDRO1 subroutine with proper finalization and error handling.
+
+## Conclusion
+The RHYDRO1 subroutine is a comprehensive module in a hydrologic simulation tool:
+- It ensures robust input handling ranging from rainfall and evaporation to channel and subcatchment connectivity.
+- Unit conversion and error checking are integrated throughout.
+- Specific corrections, such as the alphanumeric tributary subareas linkage, maintain consistency in printed outputs and simulation integrity.
+
+This summary encapsulates the core components and design decisions inherent to the RHYDRO1 routine.
+
 C       table, WCH, 11/30/93.
 C     Fix to use correct Format statement for evaporation in in. or mm
 C       per day, WCH, 4/19/94.

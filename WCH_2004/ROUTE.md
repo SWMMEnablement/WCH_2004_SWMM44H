@@ -22,8 +22,74 @@ C     SET DEFALUT VALUE FOR QO2(M) BEFORE IF STMT, RED, 12/31/93.
 C     Changes to have additional level of detail in TRANSPORT irregular
 C       section calculations.  CIM 9/8/00
 C     Use QCURVE(4), not (3), for flow. No change to QCURV2. WCH, 7/6/01.
-C     Use parameter QMINRTE for minimum flow for flow routing. Also
-C       go through same extra effort for power function channels, types
+# Extensive Summary of the Routing Fortran Subroutine
+
+This document provides a complete summary of the Fortran code responsible for routing flow through sewer elements. Below is an extensive breakdown of its key parts and functionality:
+
+## Overview
+- **Purpose:**  
+      The subroutine performs detailed flow routing calculations for sewer conduits and other elements. It computes hydraulic parameters (e.g., flow, area, slope) using a combination of functional and tabular Q-A (flow–area) relationships.
+
+- **Context:**  
+      Originally developed and updated by multiple contributors over the years, this routine is part of a larger hydraulic simulation system. It integrates with other modules for storage, treatment, and diversion operations.
+
+## Key Components
+
+### 1. Included Files and Data Structures
+- **Header Files:**  
+      The routine includes several common header files such as `TAPES.INC`, `TABLES.INC`, `NAMES.INC`, `HUGO.INC`, among others. These files provide definitions for constants, array dimensions, and variable declarations.
+
+- **Array Declarations and Equivalences:**  
+      Arrays like `QI`, `QO`, `WELL1`, `WELL2`, and `PUMP` are defined to store flow and storage information. Equivalence statements bind different arrays to the same memory locations—ensuring that related parameters (e.g., flow rates, slopes, and capacities) are maintained consistently.
+
+### 2. Main Subroutine Structure
+- **Routine Signature:**  
+      The subroutine is declared as `SUBROUTINE ROUTE(DELQ, WSLOPE)` and is primarily called by other blocks in the program during storm water or sewer simulations.
+
+- **Error Handling:**  
+      The code maintains an error counter (`NUMERR`) and uses formatted output (via numerous FORMAT statements) to print warnings and error messages if convergence is not achieved or if other anomalies occur.
+
+- **Iterative Calculations:**  
+      An important element is the use of iterative methods (specifically the Newton–Raphson procedure via `CALL NEWTON`) to converge on the proper area-to-flow (`Q-A`) relationships, ensuring that both upstream and downstream parameters correctly reflect the hydraulic conditions.
+
+### 3. Flow Calculation and Routing Logic
+- **Conduit Flow Routing:**  
+      The routine differentiates between conduits with a **functional** Q-A relationship (class 1) and those with a **tabular** Q-A relationship (class 2). Depending on conditions such as full or partial conduit flow, the algorithm:
+      - Adjusts the computed flow rates (`QFULL`, `QMAX`).
+      - Updates area parameters (`A`) based on iterative corrections.
+      - Applies weighting factors (`WT`, `WD`) to balance the spatial and temporal derivatives in the continuity equation.
+
+- **Handling Shock Conditions:**  
+      For super-critical or surcharged flows, the subroutine avoids iterations altogether, assuming that such flows bypass the detailed calculation steps.
+
+- **Extra Effort for Power Function Channels:**  
+      Special calculations provide additional corrections for power function channels, ensuring that low-flow conditions are accurately captured. The detailed branch uses refined estimates for low flows and adjusts the computed parameters accordingly.
+
+### 4. Additional Functional Elements
+- **Special Elements:**  
+      Beyond conduits, the code handles:
+      - **Manholes:** Simple flow translation without time delay.
+      - **Lift Stations:** Where pump operations control flow and involve calculations on wet-well capacity.
+      - **Storage Elements and Flow Dividers:** Separate routines adjust flows between storage units, treat diverted flows, or manage tabular diversions (e.g., type 23, type 26, etc.).
+
+- **Output Formatting:**  
+      Several `FORMAT` statements (numbered 900 through 1035) are embedded for detailing warning messages and convergence issues. These formats adhere to the conventions used across the simulation program.
+
+### 5. Summary Flow of Execution
+- **Initialization:**  
+      The subroutine begins by loading common parameters, setting up array equivalents, and preparing for iterative solution methods.
+      
+- **Decision Branching:**  
+      Based on the classification (class 1, 2, or other types indicated by `NTPE` and `NGOTO`), the code branches to different sections:
+      - For conduits, iterative recalculations adjust both flow and area.
+      - For non-conduits (e.g., manholes, pump stations), simpler translations or diversion logic applies.
+      
+- **Error Handling and Finalization:**  
+      If iterations do not converge or if the calculated flows exceed predefined limits (e.g., always comparing against `QFULL`), the routine defaults to conservative estimates. Final values are then assigned to output arrays (`QO`, `A`).
+
+## Conclusion
+This extensive routing subroutine exemplifies a mature numerical method integrating rigorous error handling, iterative methods, and multiple hydraulic scenarios. The detailed comments and structured organization demonstrate its evolution over various updates, ensuring accurate and stable hydraulic simulations.
+
 C       14 and 15 as for natural channels, type 16 since all can have
 C       IDETAIL = 1. WCH 3/14/02. 
 C     Move a couple of error prints to better location. WCH (LR), 

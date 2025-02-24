@@ -10,8 +10,49 @@ C     CHANGE 4 OCCURENCES OF IFLAG TO JFLAG AND ADD METRIC VARIABLE
 C       BY INCLUDING DETAIL.INC, RED, 11/29/93.
 C     CHANGE METRIC CALC.  9/8/00 CIM.
 C=======================================================================
-      INCLUDE 'TAPES.INC'
-      INCLUDE 'RDII.INC'
+     # Subroutine RDIIREAD Overview
+
+     This document summarizes the Fortran subroutine RDIIREAD, which processes hydrological input by reading infiltration and inflow data. The subroutine is divided into three main sections based on the value of the flag parameter (JFLAG).
+
+     ## Sections Based on JFLAG
+
+     ### When JFLAG = 0 (Global Data – F3 Card)
+     - Reads the initial global data from the F3 card, including:
+          - Primary time step (TSTEP) and secondary time step (TSTEP2).
+          - Calculation of an integer ratio to adjust TSTEP2 if needed.
+     - Contains logic to backspace the input stream and error handling if the expected data is not found.
+
+     ### When JFLAG = 1 (Global Data – F4 Card)
+     - Initializes flow-related arrays and variables.
+     - Processes multiple F4 cards, reading data into multidimensional arrays for parameters such as:
+          - Infiltration data (RDIIT, RDIIK).
+          - Storage values (DSTORE, STORAGE) and recovery data (DREC).
+     - Handles monthly input scenarios by performing additional reads when negative indicators are detected.
+     - Implements error checks to prevent reading beyond allowed data limits.
+
+     ### When JFLAG = 2 (Subbasin Data – H5 Card)
+     - Reads subbasin-specific data from the H5 card.
+     - Retrieves parameters such as subbasin area (SEWAREA) and curve identifiers (ICURVE).
+     - Sets default values when certain conditions (like zero area) are met.
+     - Contains logic (with metric conversion commented out) for handling data that might be supplied in different measurement systems.
+
+     ## Include Files
+
+     The subroutine also references additional include files that provide necessary declarations and constants:
+
+     - INCLUDE 'TAPES.INC'
+     - INCLUDE 'RDII.INC'
+
+     These files contain important definitions and configurations needed across the broader hydrological simulation system in which RDIIREAD operates.
+
+     ## Error Handling and Formatting
+
+     - The subroutine employs a common error routine (IERROR) to handle file reading problems.
+     - Detailed comments document changes, edits, and the historical evolution of the code.
+     - Control flow is carefully managed using conditional logic and backspacing features to ensure the correct sequence of data reads.
+
+     This summary provides a comprehensive overview of the structure and operations within RDIIREAD while highlighting its role in processing both global and subbasin hydrological input data.
+
 C#### RED, 11/29/93.
       INCLUDE 'DETAIL.INC'
 C=======================================================================

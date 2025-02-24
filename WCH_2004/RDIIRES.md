@@ -16,7 +16,78 @@ C       remains in mm and area is hectares.  Conversions are made to
 C       compute flows in cfs.
 C       Also changed JSTA to character*8 to match other programs.
 C       Change time step comparison to not be absolutely equal.
-C       Increase array size.
+# Summary of the RDIIRES Fortran Subroutine
+
+This document describes the Fortran subroutine `RDIIRES`, which is designed to compute rainfall-dependent infiltration and inflow (RDII) response curves. It processes rainfall data to generate unit hydrographs based on various hydrologic parameters and storage calculations.
+
+## Overview
+
+- **Purpose:**  
+      Computes RDII response curves from rainfall data and writes output to a designated scratch file (unit 8). It also performs a range of error checks, unit conversions, and manipulations of depression storage and runoff excess values.
+
+- **Context:**  
+      The subroutine is called by a larger hydrologic routine (`HYDRO`) and is part of a suite of programs used for evaluating rainfall-runoff processes. The code has undergone numerous revisions since its original creation in 1993.
+
+## Key Functional Sections
+
+1. **Inclusions and Parameter Definitions:**
+       - Multiple include files (e.g., `TAPES.INC`, `STIMER.INC`) bring in shared variable definitions.
+       - Array dimensions and constants are set up (e.g., `MAXARRAY=1000`).
+
+2. **Array Declarations and Data Initialization:**
+       - Declares arrays for storing maximum responses (`RMAX`), peak flows (`QPEAK`), time to peak (`TTKMAX`), and storage values.
+       - Initializes local logical flags (such as `INZERO`) and numeric variables.
+
+3. **RDII Response Calculation:**
+       - A nested loop structure iterates through different rain curve segments (months, triangular unit hydrographs).
+       - Unit conversion for rainfall, area, time, and flow units are applied.
+       - Calculation of the unit hydrograph flow (`QPEAK`) is based on rainfall intensity (`RDIIT`), recession constants (`RDIIK`), and excess storage.
+
+4. **Error Checking and Validation:**
+       - The routine checks for non-zero scratch file units.
+       - It verifies that time steps set in an external file match those calculated within the program. Any significant difference in values leads to error messages and halting execution.
+
+5. **Data Read/Write Operations:**
+       - The subroutine reads rainfall tapes using a designated input file (`NSCRAT(1)`) and writes computed hydrograph data to another file.
+       - Carriage control and formatting for output are managed using Fortran format statements (e.g., formats 6010, 6017).
+
+6. **Looping and Array Shifting for Time Steps:**
+       - Time-step calculations progressively update the stored hydrograph data.
+       - Array values are shifted to account for advancing simulation time, ensuring that non-zero values are maintained and zero values are handled appropriately.
+
+7. **Final Output and Clean-Up:**
+       - After processing the entire rainfall record, the averaged rainfall and runoff data are finalized.
+       - The subroutine resets counters, rewinds files, and calls auxiliary routines to set up inputs for subsequent computation steps.
+
+## Detailed Code Architecture
+
+- **Modular Design:**  
+      The code is structured into clear blocks with comments indicating key changes, such as style edits and adjustments for metric conversions.
+
+- **Conditional Processing:**  
+      The flow depends on whether the simulation is using stored hydrographs or needs to recalculate using current rainfall episodes. Checks based on flags (`IIRDII` and `IFEND`) control the flow of execution.
+
+- **Format and Conversion Routines:**  
+      Specific Fortran `FORMAT` statements ensure that outputs are human-readable and that unit conversions (e.g., from mm to inches, or from cfs/acre-in to cfs/ha-mm) are explicitly handled.
+
+- **Error Messages and Halts:**  
+      The use of `STOP` commands following error messages ensures that the simulation does not proceed with inconsistent or invalid hydrologic data, emphasizing data integrity.
+
+## Additional Considerations
+
+- **Extensibility:**  
+      The code has been modified over several years (e.g., additions for metric computations in 2000) showing adaptability for different hydrologic and computational contexts.
+
+- **Legacy and Maintainability:**  
+      Extensive in-code comments document changes and rationale making it easier for future developers to understand, modify, or extend functionality.
+
+- **Hydrologic Impact:**  
+      By computing RDII response curves, the subroutine contributes directly to understanding and modeling surface runoff, critical for water resource management, flood forecasting, and infrastructure planning.
+
+---
+
+This markdown summary provides an extensive overview of the `RDIIRES` subroutine, covering major components, the computational flow, and key aspects of file operations and error handling.
+
 C=======================================================================
       INCLUDE 'TAPES.INC'
       INCLUDE 'STIMER.INC'

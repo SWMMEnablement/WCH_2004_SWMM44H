@@ -15,7 +15,88 @@ C       area assumptions for irregular storage, WCH, 12/8/94.
 C     Correction to above correction.  Include VINIT and VLEFT in
 C       summations since these variables sum over all pipes and
 C       junctions.  WCH (C. Moore), 6/5/95.
-C     Alter IOSTAT for Lahey. WCH, 8/4/95.
+# Detailed Summary of TRANSX Fortran Code
+
+This document provides a comprehensive markdown summary of the TRANSX subroutine. TRANSX is a core Fortran routine within the Extran model used for hydraulic simulations. It orchestrates the routing of flows and computation of nodal variables across various conduits and junctions.
+
+## Overview
+
+- **Purpose:**  
+      Implements the hydraulic solution by calling subroutines (e.g., XROUTE, YROUTE, ZROUTE) to solve momentum and continuity equations.
+      
+- **Context:**  
+      Originally developed to handle conduit and junction computations including inflows, surcharging conditions, and hot-start file handling. It integrates changes from multiple updates dating from 1993 through the early 2000s.
+
+## Included Files and Common Blocks
+
+TRANSX includes several external files (using the Fortran `INCLUDE` command) to gain access to common variables, constants, and parameters:
+- TAPES.INC, STIMER.INC, BD.INC, BND.INC, HYFLOW.INC, INTER.INC, etc.
+- Additional includes provide support for ASCII output, WASP hydrodynamics, variable base flow common blocks, and detailed output controls.
+
+## Variable Declarations and Initialization
+
+- **Variable Setup:**  
+      Variables for time (`TIME`, `XTIME`), cycle counters (`ICYC`, `MTIME`), error accumulators, and hydraulic variables (depths, flows, areas) are initialized.  
+- **Constants and Functions:**  
+      The subroutine defines a statement function for linear interpolation (`QLINTP`), and sets initial conditions including a minimal cross-sectional area (via a FUDGE factor).
+
+## Main Computation Loop
+
+- **Hydraulic Calculation Flow:**  
+      - **Initialization:** Establishes starting conditions for junctions and conduits (using loops over nodes and channels).
+      - **Hot-start File Handling:** Checks for pre-saved state (hot-start) conditions; if available, reads initial flow and volume values.
+      - **Volume Calculations:** Computes initial volumes using depths, areas, and cross section parameters.
+      
+- **Iterative Time-Stepping:**  
+      The routine enters a major loop over time steps, updating:
+      - Time using both single- and double-precision counters.
+      - Flow updates through calls to subroutines such as INFLOW, and then routing methods (by branching on the isolating parameter).
+      - Error checks and adjustments (using iterative methods and Courant criteria) to adapt the time step for convergence.
+      
+- **Routing Subroutines:**  
+      - **XROUTE, YROUTE, ZROUTE:** These routines are invoked based on the condition in the SELECT CASE construct determined by the ISOL flag.
+      - **Dynamic Adjustments:** The routine adjusts iteration counts, aggregates errors, and controls the step size based on velocities and Conduit flow limits.
+      
+## Output and Reporting
+
+- **Intermediate and Final Output:**  
+      - The subroutine writes extensive time-step based printouts to an unformatted scratch file (`NOUT`) using conditional formatting based on runtime flags.
+      - Format statements throughout the code define output schemes for junction information, conduit properties (flow, velocity, hydraulic radius) and iteration statistics.
+      
+- **ASCII Output Handling:**  
+      When enabled, the code calls a separate routine (ASCOUT) for producing human-readable summaries of the hydraulic head and flow information.
+
+## Error Handling and Restart Mechanisms
+
+- **Hot-Start Files:**  
+      The code supports restarting from pre-saved conditions via a hot-start file. It includes logic to read the file, check for errors, and reinitialize key arrays if necessary.
+      
+- **Runtime Safety:**  
+      The subroutine includes error checking for divide-by-zero (e.g., when QFULL is less than or equal to zero) and prints warning messages with descriptive format statements.
+
+## Special Functions and Subroutines
+
+- **SUBROUTINE TRANSX:**  
+      The main driver that encapsulates all hydraulic calculations.
+      
+- **FUNCTION IPRNTIT:**  
+      A helper function determining if the current cycle falls within a predefined output interval. It compares the current iteration counter (`ICYC`) against the start and end markers for the print period, returning 1 when printing is due.
+
+## Format Statements
+
+- A variety of FORMAT statements (e.g., for printing hydraulic state, iteration summaries, warnings) are defined at the end of the file. These provide detailed control over output precision and layout, supporting both metric and customary units.
+
+## Summary
+
+The TRANSX subroutine is an extensive and robust component of the hydraulic routing software. It:
+- Initializes and updates key hydraulic parameters.
+- Iteratively computes flows and volumes within an adaptive time-stepping scheme.
+- Integrates multiple subroutine calls for specialized calculations.
+- Manages detailed output for both screen and file logging.
+- Includes mechanisms for error-checking and hot-start file handling, ensuring continuity across simulation runs.
+
+This detailed markdown summary encapsulates the key aspects and architecture of the TRANSX Fortran code, providing insight into both its functionality and its implementation structure.
+
 C     Correct inflow calculation for ISOL = 2 following changes to
 C       Sub. INFLOW of 10/17/95. WCH, 7/25/96.
 C     Put in error check for zero QFULL.  WCH, 1/22/97.

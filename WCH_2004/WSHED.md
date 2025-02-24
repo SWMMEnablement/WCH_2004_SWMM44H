@@ -16,7 +16,70 @@ C      UPDATED 8/93 BY CHUCK MOORE, CDM, TO ADD SUBCATCHMENT STATISTICS.
 C      METRIC FIX AND NEW IF-STMT, 9/23/93.  WCH (RED).
 C      OPTION FOR NO EVAPORATION DURING RAINY TIME STEP, WCH (CDM,
 C        CHUCK MOORE), 10/5/93.
-C      CORRECTION FOR MORE THAN ONE AIR TEMPERATURE PER DAY, RED (WCH),
+# WSHED Subroutine Overview
+
+This document summarizes the Fortran subroutine `WSHED`, which is used in hydrological modeling to compute watershed responses. It includes detailed handling of precipitation, evaporation, snowmelt, and infiltration dynamics for various subcatchments.
+
+## Key Functionalities
+
+- **Hydrologic Calculations:**  
+      Computes instantaneous water depth and flow rate based on rainfall, snowmelt, evaporation, and infiltration within different subareas (impervious, pervious, with or without depression storage).
+
+- **Snow and Temperature Adjustments:**  
+      - Integrates dynamic air temperature updates throughout the day.
+      - Implements a correction for more than one air temperature reading per day.  
+            *Note: "C      CORRECTION FOR MORE THAN ONE AIR TEMPERATURE PER DAY, RED (WCH)," indicates an important adjustment to ensure accurate thermal interpolation when multiple temperature data points are available.*
+
+- **Infiltration and Evaporation Processing:**  
+      - Utilizes subroutines (e.g., `HORTON`, `GAMP`) to model infiltration, accounting for conditions when rain or snow occurs.
+      - Adjusts evaporation based on precipitation intensity. For certain cases, evaporation from channels may be suppressed.
+
+- **Snowpack Dynamics:**  
+      - For subcatchments with snow, calls the `SNOW` routine to compute the contribution of immediate melt and other flux components.
+      - Handles varying snow cover conditions (e.g., complete snow cover versus partial depletion).
+
+- **Overland Flow and Storage Routing:**  
+      - Differentiates between water “stored” in depression storage and water contributing to runoff (surface and subsurface flows).
+      - Processes conditions for both dry and wet time steps through specific logic blocks (identifying conditions like "DR1" for no available water and "DR2" for low-depth situations).
+
+## Detailed Process Flow
+
+1. **Initialization and Data Inclusion:**  
+       - Includes numerous header files (`TAPES.INC`, `INTER.INC`, etc.) to set up necessary constants and variable arrays.
+       - Initializes key hydrologic variables that control water balance and time step computations.
+
+2. **Reading Environmental Inputs:**  
+       - Reads evaporation data from external files if the model is configured to use separate temperature or wind speed data (e.g., using `NSCRAT(3)`).
+       - Adjusts time and seasonal parameters to derive daily air temperature profiles using sinusoidal interpolation.
+
+3. **Subcatchment Loop:**  
+       - Iterates over each subcatchment (using a loop indexed over NOW), processing areas based on:
+             - **Impervious Surfaces:** Processes both depressed and non-depressed areas.
+             - **Pervious Areas:** Adjusts infiltration and evaporation dynamics.
+       - Computes weighted contributions from snowmelt and rainfall based on area-specific coefficients.
+
+4. **Flow Routing and Continuity Checks:**  
+       - Uses additional subroutines (`OVERLND` and `GROUND`) to handle lateral and groundwater flow, ensuring water conservation across subcatchments.
+       - Implements continuity summations and statistical tallies (e.g., subcat peak flow, total infiltration volume).
+
+5. **Subsurface and Quality Routing:**  
+       - For subcatchments contributing to groundwater, records detailed flow parameters.
+       - Accounts for potential flow rerouting between connected subcatchments and quality load tracking.
+
+6. **Historical Updates and Improvements:**  
+       - Notable updates are logged in the code comments, marking modifications over decades (e.g., updates by Bob Dickinson, Chuck Moore, and RED).
+       - Several corrections address numerical issues such as round-off errors and reordering of temperature calculations.
+
+## Summary
+
+The `WSHED` subroutine is a comprehensive module for simulating watershed hydrology, incorporating:
+- Detailed temperature and evaporation corrections.
+- Snowpack dynamics and melt contributions.
+- Complex handling of infiltration and flow routing.
+- Robust error checking and condition handling across a variety of hydrological states.
+
+This summary provides an extensive overview of the inner workings of the subroutine, suitable for replacing the `$SELECTION_PLACEHOLDER$` in the original document.
+
 C        1/31/94.
 C      INITIALIZE VARIABLE  KWIKSN  TO INDICATE PRESENCE OF SNOW IN
 C        ORDER TO USE  WET  TIME STEP, WCH, 4/7/94.

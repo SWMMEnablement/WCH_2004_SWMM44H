@@ -18,8 +18,93 @@ C       July 1993         WCH. Labels for return period in years,
 C                           and miscellaneous format corrections.
 C                         Use average and max flow values of cfs
 C                           and cms, not cf/hr or m^3/hr.
-C                         Make sure tables are sorted before plotting.
-C                         Warn about small return periods.
+# STATS Subroutine Documentation
+
+## Overview
+The Fortran subroutine `STATS` is part of a larger SWMM framework and is designed to perform statistical analysis on stormwater flow and pollutant data. It processes events from input interface files, computes various flow and pollutant parameters, and generates tables and graphs.
+
+## Key Features
+- **Input Handling:**  
+      - Opens multiple files (input, scratch, output) using specified file names.
+      - Reads data groups containing dates, flow, rainfall, and pollutant information.
+      - Incorporates error checks and uses BACKSPACE to handle misformatted inputs.
+
+- **Parameter Initialization & Data Parsing:**  
+      - Declares numerous arrays and variables for flow, pollutant loads, conversion factors, and graphing.
+      - Initializes settings such as minimum interevent time, metric vs. U.S. units (controlled by the `METRIC` parameter), and event thresholds.
+      - Converts dates and times to appropriate formats and performs unit conversion (e.g., from ft³ to m³).
+
+- **Event Separation and Analysis:**  
+      - Distinguishes between wet (flow or rainfall with non-zero values) and dry periods.
+      - Separates time series into individual events, calculating:
+            - **Total Flow or Volume**
+            - **Average Flow**
+            - **Peak Flow**
+            - **Event Duration**
+            - **Interevent Duration**
+      - Uses conditions to identify new events versus continuations by comparing current and previous flow conditions.
+      - Incorporates logic to warn the user when return periods are computed to be very short, which might lead to unreliable statistics.
+
+- **Pollutant Analysis:**  
+      - Processes up to ten pollutant parameters with computations for:
+            - **Total Load**
+            - **Average Load**
+            - **Peak Load**
+            - **Flow-Weighted Average Concentration (EMC)**
+            - **Peak Concentration**
+      - Adjusts pollutant loads based on unit conversions and integrates the pollutant values into the overall event analysis.
+
+- **Output Generation:**  
+      - Uses an extensive set of Fortran `FORMAT` statements to produce:
+            - Summary reports of the analysis period (start and end dates and times).
+            - Detailed event data including flow volumes, durations, and interevent times.
+            - Tables for return period and frequency analysis.
+            - Graphical representations by calling subroutines (`CURVE`, `POINTS`, and `SBTABL`) which generate plots for both return periods and frequencies.
+      - Differentiates outputs based on user input (e.g., whether to print sequential series of events, generate tables/graphs, or terminate analysis on reaching a limit).
+
+## Code Structure
+1. **Initialization:**  
+       - Inclusion of necessary header files (e.g., `TAPES.INC`, `INTER.INC`, `STIMER.INC`, etc.).
+       - Declaration and dimensioning of arrays for flow and pollutant data.
+       - Setup of conversion constants and string labels used in subsequent outputs.
+
+2. **Data Reading and Preprocessing:**  
+       - Reads the first data groups for general settings (like minimum interevent time and metric options).
+       - Separate reading routines for flow and rainfall data.
+       - Converts incoming date formats, handling both two-digit and four-digit years.
+       - Establishes location identifiers and checks for errors in the input files.
+
+3. **Event Calculation and Statistical Analysis:**  
+       - Distinguishes between wet and dry time steps, calculating cumulative volumes, peak values, and determining event durations.
+       - Adjusts calculations based on whether the record corresponds to flow (instantaneous or cumulative) or rainfall events.
+       - Uses detailed logic for calculating interevent periods, especially important when close successive events occur.
+
+4. **Pollutant Computation:**  
+       - Reads and processes pollutant values alongside flow data.
+       - Adjusts pollutant loads with proper unit conversion factors, ensuring consistency across both U.S. and metric systems.
+       - Summarizes pollutant data after event completion and integrates it into the overall event output.
+
+5. **Output and Reporting:**  
+       - Writes event data to an off-line file, then reads back to produce sequential event reports.
+       - Generates summaries including:
+             - Total flow or load.
+             - Average or peak values with unit adjustments.
+       - Produces formatted tables and graphs, with extensive formatting options defined in labeled `FORMAT` statements.
+       - Extracts and prints logarithmic moments for both flow and pollutant parameters, providing detailed statistical insights.
+
+## Additional Details
+- **Error Handling:**  
+      - Checks for inconsistencies such as flow events having zero total volumes or mismatches in expected station IDs.
+      - Provides comprehensive error and warning messages to guide the user if inputs are out of range or formatted incorrectly.
+
+- **Graphing and Layout:**  
+      - Multiple subroutines (`CURVE`, `POINTS`, `SORT`, `SBTABL`, `MOMENT`) are called to prepare, sort, and plot the data.
+      - Graph titles and labels are dynamically set based on whether the analysis is for flow or rainfall parameters.
+      - Special emphasis is placed on ensuring that the tables and graphs accurately reflect computed statistical moments and return periods.
+
+## Conclusion
+The `STATS` subroutine is a robust tool designed for the detailed statistical analysis of stormwater events. It meticulously processes both flow and rainfall data, considers pollutant loads, and provides extensive output in the form of tables and graphs. Notably, it includes checks to warn users about small return periods, ensuring reliability in the analysis outputs.
+
 C       November 1993     Correction for metric conversions and make
 C                         summations consistent with other blocks
 C                         regarding time step averaging, WCH.
