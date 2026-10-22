@@ -1,0 +1,284 @@
+{\rtf1\ansi\ansicpg1252\uc1 \deff0\deflang1033\deflangfe1033{\fonttbl{\f0\froman\fcharset0\fprq2{\*\panose 02020603050405020304}Times New Roman;}{\f1\fswiss\fcharset0\fprq2{\*\panose 020b0604020202020204}Arial;}{\f2\fmodern\fcharset0\fprq1{\*\panose 02070309020205020404}Courier New;}}{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;\red255\green255\blue255;\red0\green0\blue128;\red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}{\stylesheet{\widctlpar\adjustright \fs22\cgrid \snext0 Normal;}{\s1\sb240\sa60\keepn\widctlpar\adjustright \b\f1\fs28\kerning28\cgrid \sbasedon0 \snext0 heading 1;}{\s2\sb240\sa60\keepn\widctlpar\adjustright \b\i\f1\cgrid \sbasedon0 \snext0 heading 2;}{\*\cs10 \additive Default Paragraph Font;}{\s15\widctlpar\adjustright \f2\fs22\cgrid \sbasedon0 \snext15 Code;}{\s16\ri-720\widctlpar\adjustright \f2\fs22\cgrid \sbasedon0 \snext16 Plain Text;}{\s17\widctlpar\adjustright \fs22\cgrid \sbasedon0 \snext17 Body Text;}{\s18\ri-28\widctlpar\adjustright \fs22\cgrid \sbasedon0 \snext18 Body Text 2;}}{\info{\title Parallelization of EXTRAN with OpenMP}{\author William Magro}{\doccomm XROUTE parallelization report to CDM}{\operator Ned May}{\creatim\yr1998\mo8\dy27\hr16\min11}{\revtim\yr1998\mo8\dy27\hr16\min11}{\printim\yr1998\mo8\dy27\hr16\min11}{\version2}{\edmins0}{\nofpages9}{\nofwords2778}{\nofchars15838}{\*\company Kuck and Associates}{\nofcharsws19450}{\vern89}}\margl1319\margr1319 \widowctrl\ftnbj\aenddoc\formshade\viewkind1\viewscale88\viewzk2\pgbrdrhead\pgbrdrfoot \fet0\sectd \linex0\endnhere\sectdefaultcl {\*\pnseclvl1\pnucrm\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl2\pnucltr\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl3\pndec\pnstart1\pnindent720\pnhang{\pntxta .}}{\*\pnseclvl4\pnlcltr\pnstart1\pnindent720\pnhang{\pntxta )}}{\*\pnseclvl5\pndec\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl6\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl7\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl8\pnlcltr\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}{\*\pnseclvl9\pnlcrm\pnstart1\pnindent720\pnhang{\pntxtb (}{\pntxta )}}\pard\plain \s1\ri-28\sb240\sa60\keepn\widctlpar\outlinelevel0\adjustright \b\f1\fs28\kerning28\cgrid {Parallelization of EXTRAN with OpenMP
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {
+\par This document describes the parallelization of the XROUTE and YROUTE methods in the EXTRAN block of SWMM. The parallelization uses OpenMP parallel processing directives, which annotate the original source code. The main loops in XROUTE and YROUTE are those over the conduits. These loops run in parallel on multiple threads when the code is compiled using Kuck & Associates\rquote  Guide, from the KAP/Pro Toolset for OpenMP. See http://www.kai.com/kpts for more details on Guide.
+\par 
+\par The parallel code was tested against the original serial code on the Philadelphia CSPS, NOV93.EXT, and example EXTINPUT.DAT and EXTRAN.TXT cases provided by CDM. All numerical differences were found to be solely due to variation in roundoff error relative to the serial code. The correctness of the parallelization was verified with KAI\rquote s Assure.
+\par 
+\par The sections that follow detail the source modifications made, building parallel SWMM, and running parallel SWMM.
+\par }\pard\plain \s1\ri-28\sb240\sa60\keepn\widctlpar\outlinelevel0\adjustright \b\f1\fs28\kerning28\cgrid {Source Modifications
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {Special care has been taken for the arrays SUMQ, SUMQS, SUMAL, and AS, which are involved in reductions of the form \ldblquote X = X + A\rdblquote . To avoid unnecessary synchronization between threads and allow efficient parallelism, each thread first accumulates its own contribution to each reduction in a private array, then adds its contribution to the shared copy after the parallel loop.
+\par 
+\par The parallel implementation was designed to optimize performance using parallel reduction techniques. Parallel reductions, by their nature, result in reordering of floating point operations. While the operations performed are mathematically equivalent, the roundoff error occurring in parallel generally differs from the roundoff error occurring in serial. If the difference between the two is large, this indicates significant roundoff error may be present in the original serial code.
+\par 
+\par The steps involved in parallelizing XROUTE are detailed below, by referring directly to the changes to the source code. The changes are presented in the format of a context diff, as produced by the program \lquote diff\rquote .  The original file is compared to the new version of the file. New lines are marked with a \ldblquote +\rdblquote  in the first column, and changed lines are marked with a "!\rdblquote .
+\par 
+\par The changes to YROUTE are identical in spirit.
+\par }\pard\plain \s16\li720\ri-28\widctlpar\adjustright \f2\fs22\cgrid {
+\par }\pard \s16\li720\ri-658\widctlpar\adjustright {****************** 16,21 ****--- 16,23 ----        INCLUDE 'WEIR.INC'        INCLUDE 'FLODAT.INC'
+\par         DOUBLE PRECISION AKON,QNEW,DELQ1,DELQ2,DELQ3,DELQ4,DELQ5
+\par }{\b +       DOUBLE PRECISION SUMQ1(NJ),SUMQS1(NJ),SUMAL1(NJ),AS1(NJ)
+\par +       DOUBLE PRECISION SUMQL(NJ),SUMQSL(NJ),SUMALL(NJ),ASL(NJ)
+\par }\pard \s16\li720\ri-28\widctlpar\outlinelevel0\adjustright {
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {The first set of arrays, with names ending in \lquote 1\rquote , provides private copies of the arrays involved in reductions (reduction arrays).
+\par 
+\par The second line declares new, shared arrays, which are used to store the previous values of the reduction arrays. This allows each thread to start its reduction using the previous value of each reduction array, improving numerical consistency between the serial and parallel runs.
+\par }\pard\plain \s16\li720\ri-28\widctlpar\outlinelevel0\adjustright \f2\fs22\cgrid {
+\par }\pard \s16\li720\ri-658\widctlpar\adjustright {  C==============================================================  C     STORE OLD TIME STEP FLOW VALUES  C==============================================================
+\par ***************
+\par *** 40,52 ****
+\par   C     FULL-STEP AREA, RADIUS : VELOCITY
+\par   C     HALF-STEP FLOW
+\par   C================================================================
+\par         DO 100 N = 1,NTC
+\par         NL       = NJUNC(N,1)
+\par         NH       = NJUNC(N,2)
+\par         H(N,1)    = AMAX1(Y(NL) + Z(NL),ZU(N))
+\par         H(N,2)    = AMAX1(Y(NH) + Z(NH),ZD(N))
+\par }{\b !       CALL HEAD(N,NL,NH,H(N,1),H(N,2),QO(N),A(N),V(N),HRAD,
+\par !      +                       ANH,ANL,RNL,RNH,IDOIT,LINK(N))
+\par }\pard \s16\li720\ri-28\widctlpar\adjustright {
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {The call to HEAD has been replaced by a call to a new routine, NHEAD. See below.
+\par }\pard\plain \s16\li720\ri-658\widctlpar\adjustright \f2\fs22\cgrid {        IF(HRAD.GT.HMAX(N)) HMAX(N) = HRAD        IF(A(N).GT.AMAX(N)) AMAX(N) = A(N)        IF(IDOIT.EQ.0) THEN--- 42,69 ----  C     FULL-STEP AREA, RADIUS : VELOCITY
+\par   C     HALF-STEP FLOW
+\par   C===============================================================
+\par }{\b + C$OMP PARALLEL
+\par + C$OMP& PRIVATE(N,NL,NH,HRAD,IDOIT,AKON,DQDH,ANH,ANL,J)
+\par + C$OMP& PRIVATE(DELQ1,DELQ2,DELQ3,DELQ4,DELQ5,QNEW,DELH,DELZP,DIFF1)
+\par + C$OMP& PRIVATE(DIFF2,RNL,QNORM,ANH,RNH,SUMQ1,SUMQS1,SUMAL1)
+\par + C$OMP& PRIVATE(AS1)
+\par }\pard \s16\li720\ri-28\widctlpar\adjustright {
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {These comments are OpenMP directives. The program goes parallel at this point, and each thread gets a private copy of the variables listed in the PRIVATE() clauses.
+\par }\pard\plain \s16\li720\ri-658\widctlpar\adjustright \f2\fs22\cgrid {+ C+ CWRM CLEAR THE PARTIAL SUMS+       DO J = 1, NJ}{\b +         SUMQ1(J)  = QIN(J)+         SUMQS1(J) = QIN(J)+         SUMAL1(J) = 0.0+         AS1(J) = AMEN}{+       ENDDO+ C
+\par }\pard \s16\li720\ri-28\widctlpar\adjustright {
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {The private reduction arrays are initialized here, using the current values of the original arrays.
+\par }\pard\plain \s16\li720\ri-658\widctlpar\adjustright \f2\fs22\cgrid {}{\b + C$OMP DO SCHEDULE(GUIDED)
+\par }\pard \s16\li720\ri-28\widctlpar\adjustright {
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {The threads running in parallel split up the work in the loop following a DO directive. The SCHEDULE(GUIDED) clause instructs the threads to dynamically fetch chunks of work of decreasing size until all loop iterations are completed. This type of scheduling improves performance by dynamically balancing the load across threads, but it also makes the mapping of iterations to threads non-deterministic, since the time to complete each chunk of work is non-deterministic. The roundoff error may therefore vary from run to run. To disable guided scheduling, remove the SCHEDULE(GUIDED) clause.
+\par }\pard\plain \s16\li720\ri-658\widctlpar\adjustright \f2\fs22\cgrid {        DO 100 N = 1,NTC
+\par         NL       = NJUNC(N,1)        NH       = NJUNC(N,2)        H(N,1)    = AMAX1(Y(NL) + Z(NL),ZU(N))
+\par         H(N,2)    = AMAX1(Y(NH) + Z(NH),ZD(N))
+\par }{\b !       CALL NHEAD(N,NL,NH,H(N,1),H(N,2),QO(N),A(N),V(N),HRAD,
+\par !      +                   ANH,ANL,RNL,RNH,IDOIT,LINK(N),AS1)
+\par }\pard \s16\li720\ri-28\widctlpar\adjustright {
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {The call to HEAD has been replaced by a call to NHEAD. The only difference between these routines is that NHEAD modifies variable AS1, which is a formal parameter, rather than AS, which is in common. This is a performance optimization, since all threads would otherwise compete for the single copy of AS.
+\par }\pard\plain \s16\li720\ri-658\widctlpar\adjustright \f2\fs22\cgrid {        IF(HRAD.GT.HMAX(N)) HMAX(N) = HRAD
+\par         IF(A(N).GT.AMAX(N)) AMAX(N) = A(N)
+\par         IF(IDOIT.EQ.0) THEN
+\par ***************
+\par *** 144,156 ****
+\par         QT(N) = AMIN1(SPHI(N),QT(N))
+\par         ENDIF
+\par     95  DQDH      = 1.0/(1.0+AKON)*GRVT*DELT2*A(N)/LEN(N)
+\par !       SUMQ(NL)  = SUMQ(NL)  - 0.5*(QT(N)+QO(N))
+\par !       SUMQS(NL) = SUMQS(NL) - QT(N)
+\par !       SUMAL(NL) = SUMAL(NL) + DQDH
+\par !       SUMQ(NH)  = SUMQ(NH)  + 0.5*(QT(N)+QO(N))
+\par !       SUMQS(NH) = SUMQS(NH) + QT(N)
+\par !       SUMAL(NH) = SUMAL(NH) + DQDH
+\par     100 CONTINUE
+\par C===================================================================  C     SET HALF STEP OUTFLOWS AND INTERNAL TRANSFERS
+\par   C===================================================================
+\par --- 161,189 ----
+\par         QT(N) = AMIN1(SPHI(N),QT(N))
+\par         ENDIF
+\par     95  DQDH      = 1.0/(1.0+AKON)*GRVT*DELT2*A(N)/LEN(N)
+\par }{\b !       SUMQ1(NL)  = SUMQ1(NL)  - 0.5*(QT(N)+QO(N))
+\par !       SUMQS1(NL) = SUMQS1(NL) - QT(N)
+\par !       SUMAL1(NL) = SUMAL1(NL) + DQDH
+\par !       SUMQ1(NH)  = SUMQ1(NH)  + 0.5*(QT(N)+QO(N))
+\par !       SUMQS1(NH) = SUMQS1(NH) + QT(N)
+\par !       SUMAL1(NH) = SUMAL1(NH) + DQDH
+\par }\pard \s16\li720\ri-28\widctlpar\outlinelevel0\adjustright {    100 CONTINUE 
+\par }\pard \s16\li720\ri-658\widctlpar\adjustright {
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {All references to the reduction arrays have been replaced by references to the private copies. The private copies will be summed after the loop.
+\par }\pard\plain \s16\li720\ri-658\widctlpar\adjustright \f2\fs22\cgrid {}{\b + C$OMP END DO NOWAIT
+\par }{
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {The NOWAIT clause suppresses the barrier synchronization point normally implied by a parallel do loop. The synchronization is unnecessary here, because the shared variables referenced below were not modified above in parallel. This unnecessary barrier has been removed as a performance optimization.
+\par }\pard\plain \s16\li720\ri-658\widctlpar\adjustright \f2\fs22\cgrid {+ CWRM COMBINE THE PARTIAL SUMS+ CWRM SPLIT CRITICAL SECTIONS REDUCES CONTENTION FOR LOCKS
+\par }{\b + C$OMP CRITICAL (TOP)}{+       DO J = 1, NJ+         SUMQ(J)  = SUMQ(J)  + (SUMQ1(J)  - QIN(J))
+\par +         SUMQS(J) = SUMQS(J) + (SUMQS1(J) - QIN(J))
+\par +       ENDDO
+\par }{\b + C$OMP END CRITICAL
+\par + C$OMP CRITICAL (BOTTOM)
+\par }{+       DO J = 1, NJ
+\par +         SUMAL(J) = SUMAL(J) + SUMAL1(J)
+\par +         AS(J)    = AS(J)    + (AS1(J) - AMEN)
+\par +       ENDDO
+\par }{\b + C$OMP END CRITICAL
+\par }\pard \s16\li720\ri-28\widctlpar\adjustright {
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {Only one thread is permitted to execute the code inside a critical section of a given name at a given time. The threads enter these critical regions one after the other and add their contributions to the reduction arrays. The initial values are subtracted off, since the shared copy of each array has already been initialized.
+\par 
+\par The critical section is split into two separate sections as a performance optimization. One thread can be working in section \ldblquote TOP\rdblquote  while another works in section \ldblquote BOTTOM\rdblquote . 
+\par }\pard\plain \s16\li720\ri-658\widctlpar\adjustright \f2\fs22\cgrid {}{\b + C$OMP END PARALLEL
+\par }\pard \s16\li720\ri-28\widctlpar\adjustright {
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {The parallel region ends here. Only one thread runs the code between here and the next parallel region.
+\par }\pard\plain \s16\li720\ri-658\widctlpar\adjustright \f2\fs22\cgrid {  C===================================================================  C     SET HALF STEP OUTFLOWS AND INTERNAL TRANSFERS
+\par   C===================================================================
+\par ***************
+\par *** 235,240 ****
+\par --- 268,296 ----
+\par   CIM END OOOOOOO
+\par         DO 1000 KLOOP = 1,100000
+\par         ERROR    = 0.0
+\par + CWRM SAVING THE PREVIOUS VALUES IMPROVES NUMERICAL CONSISTENCY
+\par +       DO J = 1, NJ
+\par }{\b +         SUMQL(J)  = SUMQ(J)
+\par +         SUMQSL(J) = SUMQS(J)
+\par +         SUMALL(J) = SUMAL(J)
+\par +         ASL(J) = AS(J)
+\par }{+       ENDDO
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {The \ldblquote last value\rdblquote  arrays are initialized here to the values of the shared arrays upon entry to the parallel region. These will be used later to subtract off the extra initialization values.
+\par 
+\par The remaining changes closely follow those detailed in the first half of the routine.
+\par }\pard\plain \s16\li720\ri-28\widctlpar\adjustright \f2\fs22\cgrid {
+\par }\pard \s16\li720\ri-658\widctlpar\adjustright {+ C$OMP PARALLEL + C$OMP& PRIVATE(N,NL,NH,HRAD,IDOIT,AKON,DQDH,ANH,ANL,HRAD,J)
+\par + C$OMP& PRIVATE(DELQ1,DELQ2,DELQ3,DELQ4,DELQ5,QNEW,DELH,DELZP,DIFF1)
+\par + C$OMP& PRIVATE(DIFF2,RNL,QNORM,ANH,RNH,DIRQ,DIRQT,SUMQ1,SUMQS1,SUMAL1)
+\par + C$OMP& PRIVATE(AS1)
+\par + C
+\par + CWRM CLEAR THE PARTIAL SUMS
+\par + CWRM STARTING PARTIAL SUMS AT PREVIOUS VALUE IMPROVES NUMERICAL
+\par + CWRM CONSISTENCY
+\par +       DO J = 1, NJ
+\par +         SUMQ1(J)  = SUMQL(J)
+\par +         SUMQS1(J) = SUMQSL(J)
+\par +         SUMAL1(J) = SUMALL(J)
+\par +         AS1(J) = ASL(J)
+\par +       ENDDO
+\par + C
+\par + C$OMP DO SCHEDULE(GUIDED)
+\par         DO 360 N = 1,NTC
+\par         NL       = NJUNC(N,1)
+\par         NH       = NJUNC(N,2)
+\par ***************
+\par *** 245,252 ****
+\par        +                                        GO TO 360
+\par         H(N,1)    = AMAX1(YT(NL) + Z(NL),ZU(N))
+\par         H(N,2)    = AMAX1(YT(NH) + Z(NH),ZD(N))
+\par !       CALL HEAD(N,NL,NH,H(N,1),H(N,2),QT(N),AT(N),VT(N),HRAD,
+\par !      +                         ANH,ANL,RNL,RNH,IDOIT,LINK(N))
+\par         IF(IDOIT.EQ.0) THEN
+\par                        Q(N)  = 0.0
+\par                        AKON  = 0.0
+\par --- 301,308 ----
+\par        +                                        GO TO 360
+\par         H(N,1)    = AMAX1(YT(NL) + Z(NL),ZU(N))
+\par         H(N,2)    = AMAX1(YT(NH) + Z(NH),ZD(N))
+\par !       CALL NHEAD(N,NL,NH,H(N,1),H(N,2),QT(N),AT(N),VT(N),HRAD,
+\par !      +                     ANH,ANL,RNL,RNH,IDOIT,LINK(N),AS1)
+\par         IF(IDOIT.EQ.0) THEN
+\par                        Q(N)  = 0.0
+\par                        AKON  = 0.0
+\par ***************
+\par *** 348,360 ****
+\par         Q(N) = AMIN1(SPHI(N),Q(N))
+\par         ENDIF
+\par     995 DQDH      = 1.0/(1.0+AKON)*GRVT*DELT*AT(N)/LEN(N)
+\par !       SUMQ(NL)  = SUMQ(NL)  - 0.5*(Q(N)+QO(N))
+\par !       SUMQS(NL) = SUMQS(NL) - Q(N)
+\par !       SUMAL(NL) = SUMAL(NL) + DQDH
+\par !       SUMQ(NH)  = SUMQ(NH)  + 0.5*(Q(N)+QO(N))
+\par !       SUMQS(NH) = SUMQS(NH) + Q(N)
+\par !       SUMAL(NH) = SUMAL(NH) + DQDH
+\par     360 CONTINUE
+\par   C===================================================================
+\par   C     SET FULL STEP OUTFLOWS AND INTERNAL TRANSFERS
+\par   C===================================================================
+\par --- 404,432 ----
+\par         Q(N) = AMIN1(SPHI(N),Q(N))
+\par         ENDIF
+\par     995 DQDH      = 1.0/(1.0+AKON)*GRVT*DELT*AT(N)/LEN(N)
+\par !       SUMQ1(NL)  = SUMQ1(NL)  - 0.5*(Q(N)+QO(N))
+\par !       SUMQS1(NL) = SUMQS1(NL) - Q(N)
+\par !       SUMAL1(NL) = SUMAL1(NL) + DQDH
+\par !       SUMQ1(NH)  = SUMQ1(NH)  + 0.5*(Q(N)+QO(N))
+\par !       SUMQS1(NH) = SUMQS1(NH) + Q(N)
+\par !       SUMAL1(NH) = SUMAL1(NH) + DQDH
+\par     360 CONTINUE
+\par + C$OMP END DO NOWAIT
+\par + CWRM COMBINE THE PARTIAL SUMS
+\par + CWRM SPLIT CRITICAL SECTIONS REDUCES CONTENTION FOR LOCKS
+\par + C$OMP CRITICAL (TOP)
+\par +       DO J = 1, NJ
+\par }{\b +         SUMQ(J)  = SUMQ(J)  + (SUMQ1(J) - SUMQL(J))
+\par +         SUMQS(J) = SUMQS(J) + (SUMQS1(J) - SUMQSL(J))
+\par }{+       ENDDO
+\par + C$OMP END CRITICAL
+\par + C$OMP CRITICAL (BOTTOM)
+\par +       DO J = 1, NJ
+\par }{\b +         SUMAL(J) = SUMAL(J) + (SUMAL1(J) - SUMALL(J))
+\par +         AS(J)    = AS(J)    + (AS1(J) - ASL(J))
+\par }{+       ENDDO
+\par + C$OMP END CRITICAL
+\par + C$OMP END PARALLEL
+\par }\pard \s16\li720\ri-28\widctlpar\adjustright {
+\par }\pard\plain \s18\ri-28\widctlpar\adjustright \fs22\cgrid {Here, the initialization values saved in SUMQL, SUMQSL, SUMALL, and ASL are subtracted off as the private arrays are summed.
+\par }\pard\plain \s1\sb240\sa60\keepn\widctlpar\outlinelevel0\adjustright \b\f1\fs28\kerning28\cgrid {Alternative YROUTE Implementation
+\par }\pard\plain \widctlpar\adjustright \fs22\cgrid {The initialization of private reduction arrays used above was designed to improve numerical consistency between the original serial SWMM and its OpenMP counterpart. A simpler and more conventional implementation of parallel reductions would use zero as the initialization value. This would obviate the need to subtract off the initialization after the loop. As an example, we have provided such a version of YROUTE in the file extra\\yroute.simple.for.
+\par }\pard\plain \s1\ri-28\sb240\sa60\keepn\widctlpar\outlinelevel0\adjustright \b\f1\fs28\kerning28\cgrid {Building SWMM/OpenMP
+\par }\pard\plain \s2\sb240\sa60\keepn\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {The Guidef Compile Driver
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {The KAP/Pro Toolset includes a compile driver, called \ldblquote guidef\rdblquote , that combines the OpenMP directive implementation and compilation steps into a single build step. Guidef is intended as a replacement for the standard Digital Visual Fortran driver, known variously as \lquote df.exe\rquote , \lquote f90.exe\rquote , and \lquote fl32.exe\rquote . Similarly, guidel is intended to replace the DVF linker, \ldblquote link.exe\rdblquote . Guidel acts like link.exe, but adds the appropriate Application Accelerator run-time library to the link line.
+\par 
+\par You can install guidef and guidel as the default compiler and linker, respectively, in Visual Studio. To do this, run \ldblquote Add Guide 3.5 to Visual Studio\rdblquote  in the KAP/Pro Toolset program group. Be sure Visual Studio isn\rquote t running when adding or removing Guide as the default compiler.
+\par 
+\par A Visual Studio workspace, named \ldblquote swmmomp.dsw\rdblquote , is included with SWMM/OpenMP. This workspace requires Guidef to be installed as the default Visual Studio compiler.
+\par 
+\par The workspace, because some portions of SWMM are not safe to compile with stack allocation of local variables.
+\par }\pard\plain \s2\sb240\sa60\keepn\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {Thread Safety and /automatic
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {A parallel program must generally be thread-safe to run correctly. In particular, local variables in routines that will be executed concurrently must be allocated on the thread stack. These are known as AUTOMATIC variables, and the DVF compiler flag /automatic makes this style of allocation the default. The flag /noautomatic has the opposite effect. Guidef normally enables the /automatic switch, but this can be overridden by explicitly stating /noautomatic in Visual Studio\rquote s \ldblquote project options\rdblquote  text field.
+\par 
+\par }\pard\plain \s18\ri-28\widctlpar\adjustright \fs22\cgrid {Some sections of SWMM outside the EXTRAN block will not operate correctly when /automatic is used, since they assume values of certain variables will be carried from one call to the next but do not include explicit SAVE statements to guarantee this behavior. We have identified many, but not all, of these variables and inserted appropriate SAVE statements. The comment pair CWRMb and CWRMe delimits these changes.
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {
+\par Despite these SAVE statements, some parts of SWMM remain unsafe to compile with /automatic. For this reason, the Visual Studio workspace contains two projects. The first project, named \ldblquote swmmomp\rdblquote  makes /noautomatic the default project setting and includes most of the SWMM source files. The second project, named \ldblquote swmmpar\rdblquote , compiles the following files using the /automatic setting:
+\par 
+\par }\pard\plain \s16\li720\ri-658\widctlpar\adjustright \f2\fs22\cgrid {xroute.for
+\par yroute.for
+\par depthx.for
+\par htides.for
+\par tidefile.for
+\par jdate.for
+\par printp.for
+\par nhead.for
+\par hydrad.for
+\par bridges.for
+\par m2inter.for
+\par ogates.for
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {
+\par These files contain routines called from within the parallel regions inside XROUTE and YROUTE. The swmmpar project compiles these files into a library, called \ldblquote swmmpar.lib\rdblquote , which is used by the swmmomp project.
+\par 
+\par If the remaining variables requiring SAVE statements are located, and the appropriate SAVE statements are inserted, the /noautomatic flag can be removed from the project options, and the two projects can be merged into one.
+\par }\pard\plain \s2\sb240\sa60\keepn\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {Strings Continued across Lines
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {SWMM contains some character strings that span multiple lines. To prevent Guide from padding these input lines to column 72 with blanks, the argument /WG,-noblank_padding is included in the project options. This behavior will be the default in Guide version 3.6, so this option can later be removed.
+\par }\pard\plain \s2\sb240\sa60\keepn\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {Fortran Pre-processor
+\par }\pard\plain \s18\ri-28\widctlpar\adjustright \fs22\cgrid {Guidef\rquote s default behavior is to invoke the Fortran pre-processor on files ending in .FOR. The option /WGnocpp is included to suppress this behavior for SWMM. Using the pre-processor causes compilation to fail on some files, due to the use of \ldblquote #\rdblquote  as a continuation character. The character \ldblquote #\rdblquote  is special to the preprocessor.
+\par }\pard\plain \s2\sb240\sa60\keepn\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {Fortran 90 Modules
+\par }\pard\plain \ri-28\widctlpar\adjustright \fs22\cgrid {The SWMM files clinedvs.for and fileck.for use the DVF Fortran 90 modules DFUSER and DFPORT, respectively. The source to these files, located in the DevStudio directory under DF\\include, contain non-standard Fortran 90 attributes in the form of comments. Guide is unable to process these invalid F90 files, and will complain. A simple workaround is to include two empty files, named dfuser.kmo and dfport.kmo. These .kmo files are the equivalent of DVF\rquote s .mod files and normally contain interface and declaration information for Fortran 90 modules. Alternatively, a custom build step can be placed in Visual Studio to use the df.exe driver to build these files. The distribution contains empty .kmo files.
+\par 
+\par }\pard\plain \s1\sb240\sa60\keepn\widctlpar\outlinelevel0\adjustright \b\f1\fs28\kerning28\cgrid {Running SWMM/OpenMP
+\par }\pard\plain \widctlpar\adjustright \fs22\cgrid {SWMM/OpenMP will run just like serial SWMM on serial computers, but will run on all available CPUs on multi-processor machines. Its behavior can be controlled, however, via environment variables. See the Guide documentation for a full listing of the available options. The two most commonly used are described here.
+\par }\pard\plain \s2\sb240\sa60\keepn\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {Setting the Number of Threads
+\par }\pard\plain \widctlpar\adjustright \fs22\cgrid {The number of parallel threads to use defaults to the number of CPUs in the machine. The thread count can be explicitly set via the OMP_NUM_THREADS environment variable. To run SWMM using two threads from the Windows command prompt, type
+\par 
+\par }\pard\plain \s16\li720\ri-658\widctlpar\adjustright \f2\fs22\cgrid {set OMP_NUM_THREADS=2
+\par swmmomp.exe
+\par }\pard\plain \s2\sb240\sa60\keepn\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {Enabling Dynamic Adjustment of Threads
+\par }\pard\plain \widctlpar\adjustright \fs22\cgrid {The Guide Application Accelerator library can automatically adjust its resource usage in response to system load. It does this by dynamically adjusting the number of threads in use. You can enable this behavior via the OMP_DYNAMIC environment variable. For example, to run SWMM on up to two threads, type:
+\par 
+\par }\pard\plain \s16\li720\ri-658\widctlpar\adjustright \f2\fs22\cgrid {set OMP_NUM_THREADS=2
+\par set OMP_DYNAMIC true
+\par swmmomp.exe
+\par }\pard\plain \widctlpar\adjustright \fs22\cgrid {
+\par Note that Guide will never increase the number of threads beyond the value of OMP_NUM_THREADS. The default behavior, when OMP_DYAMIC is undefined, is to fix the number of threads at the value specified in OMP_NUM_THREADS.
+\par }\pard\plain \s2\sb240\sa60\keepn\widctlpar\outlinelevel1\adjustright \b\i\f1\cgrid {Performance Tuning with GuideView
+\par }\pard\plain \widctlpar\adjustright \fs22\cgrid {The KAP/Pro Toolset includes a performance tool known as GuideView. To build an instrumented version of SWMM, add the option \ldblquote /WGstats\rdblquote  to the link command and relink. When SWMM is run on a typical data set, a statistics report with default name \ldblquote guide_stats\rdblquote  is created. You can then use GuideView to view the parallel performance characteristics of the run by issuing:
+\par 
+\par }\pard\plain \s16\li720\ri-658\widctlpar\adjustright \f2\fs22\cgrid {guideview guide_stats
+\par }\pard\plain \widctlpar\adjustright \fs22\cgrid {
+\par }\pard\plain \s1\sb240\sa60\keepn\widctlpar\outlinelevel0\adjustright \b\f1\fs28\kerning28\cgrid {Contact Information
+\par }\pard\plain \widctlpar\adjustright \fs22\cgrid {If you have any further questions about SWMM/OpenMP, please contact us at:
+\par 
+\par }\pard \li720\widctlpar\adjustright {Kuck & Associates, Inc
+\par 1906 Fox Drive
+\par Champaign, IL 61820
+\par 217-356-2288
+\par }}

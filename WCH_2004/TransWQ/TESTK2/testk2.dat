@@ -1,0 +1,89 @@
+*  Example file for program TESTK2.
+*  This input file may be used in lieu of entering all the same data
+*  on-screen, at the command prompt.
+*  Lines with asterisks in column 1 are comment lines.
+*  Include A1, B1 and C1 at beginning of appropriate lines. 
+*  Questions?  Contact Wayne Huber at wayne.huber@orst.edu. 
+*============================================================================
+*  This program will compute values of K2 (alternatively known as Ka), the
+*  reaeration coefficient, for flow-driven and wind-driven reaeration.
+*  The program is intended to test the reaeration computations included
+*  in the SWMM Transport Block.  The same subroutine is used here and
+*  in SWMM.  
+*============================================================================
+*  REFERENCES: For flow-driven reaeration, see: A.P. Covar, 
+*  "Selecting the Proper Reaeration Coefficient for Use in Water 
+*  Quality Models," Proc. EPA Conference on Environmental Modeling and 
+*  Simulation, W.R. Ott, ed., Cincinnati, OH, April 1976, 
+*  EPA-600/9-76-016, July, 1976.
+*  For wind-driven reaeration, see: D.J. O'Connor, "Wind Effects on
+*  Gas-Liquid Transfer Coefficients," J. Environmental Engineering,
+*  ASCE, Vol. 109, No. 3, June 1983, pp. 731-752.
+*============================================================================
+*     A1 = Title line. 
+*============================================================================
+*Here, try a run with metric and with user-supplied reaeration eqn.
+A1 ' USER-SUPPLIED REAERATION, AND METRIC FOR REAERATION.'
+*============================================================================
+*      Parameters are those used in O'Connor (1983) wind-driven 
+*      reaeration method.
+*
+*         KOVAR     :  = 0, Use Covar (1983) combination method for 
+*                        flow-driven reaeration coefficient: Owens et al. 
+*                        for average depth (DBAR) <= 2.0 ft, and
+*                        combination of Churchill et al. and O'Connor 
+*                        and Dobbins for DBAR > 2 ft.
+*                      = 1, Use user-supplied coefficients on C1 line.
+*                      = 2, Do not compute flow-driven reaeration. 
+*         KWIND     :  = 0, Compute KsubL and K2 using O'Connor (1983) 
+*                        wind-driven reaeration method.
+*                      = 1, Do not compute wind-driven reaeration.
+*         XLAMBDA   :  Reciprocal of roughness Reynolds No. (O'Connor
+*                      Eqn. 12).
+*         GAMMAZ    :  Boundary layer thickness Reynolds No. (O'Connor
+*                      Eqn. 14).
+*         PRESURE   :  Atmospheric pressure, mb.  Used to compute 
+*                      air density.
+*         SALINITY  :  Salinity of water, ppt. Used to compute water
+*                      density. 
+*         ZEE       :  Roughness at water surface in fully-rough wind
+*                      region, cm.
+*         ZAA       :  Elevation of wind measurement, m. 
+*         UTSTAR    :  Shear velocity used in transition region between
+*                      smooth and rough regions, cm/s.  (O'Connor Eqn.
+*                      15a).
+*         UCSTAR    :  Critical shear velocity for boundary between
+*                      smooth and transition region, cm/s.  (O'Connor
+*                      Eqn. 16).
+*         THETA3    :  Temperature correction for K2 in equation
+*                      K2(T) = K2(20)*THETA3**(T-20), with T in degC.
+*         TAIR      :  Air temperature, degC.
+*         TWATER    :  Water temperature, degC.
+*         WINDU     :  Upper bound on wind speed, m/s.  Wind reaeration
+*                      values will be printed at 40 increments of WINDU. 
+*============================================================================
+* Here, use O'Connor default values, except for wind measurement at 2 m
+* instead of O'Connor's 10 m. 
+*  KOVAR KWIND XLAMBDA GAMMAZ PRESURE SALINITY ZEE ZAA UTSTAR UCSTAR THETA3 TAIR TWATER WINDU
+B1   1    0      3.0    6.5     1000.   0.0   0.25  2.  11.0   10.0  1.024   20.  20.   20.0
+*============================================================================
+*    C1 line required when KOVAR = 0 or 1.  Not required for KOVAR = 2.
+*
+*         METRIC    :  = 1, U.S. customary units for depth (ft) and 
+*                      velocity (ft/s).
+*                      = 2, Metric units for depth (m) and velocity (m/s).
+*         DEPTHU    :  Output of K2 values for five depth increments, to 
+*                      maximum of DEPTHU, ft [m].
+*         VELLU     :  Output of K2 values for five velocity increments, 
+*                      to maximum of VELLU, ft/s [m/s].
+*
+*      REA1, REA2, REA3 required only for KOVAR = 1.
+*
+*     Reaeration equation is: K2 = REA1*velocity**REA2/depth**REA3
+*     for value of K2 in units of 1/day.  REA values should be consistent
+*     with ft-sec or m-sec units.
+*============================================================================
+*  METRIC DEPTHU VELLU REA1 REA2 REA3
+C1   2      5.0   5.0  6    1.8  0.9
+*============================================================================
+* No more input required. 
