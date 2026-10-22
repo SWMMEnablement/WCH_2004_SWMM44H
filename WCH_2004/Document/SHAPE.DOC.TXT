@@ -1,0 +1,220 @@
+This file documents the size codes to use for standard
+elliptical and arch pipes (NKLASS = 9, 10, and 11).
+
+Minor update by WCH, 7/20/04.
+
+The following two tables document standard dimensions, full flow
+area, and full flow hydraulic radius for standard sizes obtained
+from the "Concrete Pipe Design Manual" published by the American
+Concrete Pipe Association and "Modern Sewer Design" published by
+the American Iron and Steel Institute.
+
+See also web pages:
+http://www.lane-enterprises.com/cspFullFlow.htm
+http://www.lane-enterprises.com/sppFullFlow_p2.htm
+
+For these pipe types, the size code is entered in the DEEP field
+on the C1 card group.  
+
+It is suggested that the standard sizes presented on Tables 1
+through 6 be used.  However, if it is necessary to enter a size
+other than those presented on the following tables, enter the
+conduit DEEP and WIDE parameters in feet as negative numbers.  
+
+If DEEP and WIDE are entered as negative numbers for horizontal
+and vertical elliptical pipes, then the full-flow area (Afull) and
+full-flow hydraulic radius (Rfull) will be approximated as a
+function of the minor axis length (AMINOR) as follows :
+
+          Afull = 1.2692 * AMINOR * AMINOR
+          Rfull = 0.3061 * AMINOR
+
+If DEEP and WIDE are entered as negative numbers for arch pipes,
+the full flow area (Afull) and full flow hydraulic radius
+(Rfull) will be approximated as the following:
+
+          Afull = 0.7879 * DEEP * WIDE  (correction, 7/20/04)
+          Rfull = 0.2991 * DEEP
+------------------
+         TABLE 1
+        Standard Elliptical Pipe Sizes - NKLASS = 9 or 10
+
+For horizontal alignment, DEEP = minor axis.
+For vertical alignment, DEEP = major axis. 
+ 
+           Size   Minor AxisMajor AxisFull Area Full Hydraulic
+           Code     Inches    Inches    sq ft    Radius ft
+            1         14        23       1.8       0.37
+            2         19        30       3.3       0.49
+            3         22        34       4.1       0.55
+            4         24        38       5.1       0.61
+            5         27        42       6.3       0.69
+            6         29        45       7.4       0.74
+            7         32        49       8.8       0.81
+            8         34        53       10.2      0.88
+            9         38        60       12.9      0.97
+            10        43        68       16.6      1.11
+            11        48        76       20.5      1.23
+            12        53        83       24.8      1.35
+            13        58        91       29.5      1.48
+            14        63        98       34.6      1.60
+            15        68       106       40.1      1.72
+            16        72       113       46.1      1.85
+            17        77       121       52.4      1.97
+            18        82       128       59.2      2.09
+            19        87       136       66.4      2.22
+            20        92       143       74.0      2.34
+            21        97       151       82.0      2.46
+            22       106       166       99.2      2.71
+            23       116       180      118.6      2.97
+-----------------
+                                                                             1.5667  0.8101  0.3061
+         TABLE 2
+        CONCRETE ARCH PIPE  NKLASS = 11
+
+           Size   Minor AxisMajor AxisFull Area Full Hydraulic
+           Code     Inches    Inches    sq ft    Radius ft
+            1       11        18         1.1       0.25
+            2       13  1/2   22         1.65      0.30
+            3       15  1/2   26         2.2       0.36
+            4       18        28  1/2    2.8       0.45
+            5       22  1/2   36  1/4    4.4       0.56
+            6       26  5/8   43  3/4    6.4       0.68
+            7       31  5/16  51  1/8    8.8       0.80
+            8       36        58  1/2    11.4      0.90
+            9       40        65         14.3      1.01
+            10      45        73         17.7      1.13
+            11      54        88         25.6      1.35
+            12      62       102         34.6      1.57
+            13      72       115         44.5      1.77
+            14      77  1/2  122         51.7      1.92
+            15      87  1/8  138         66.0      2.17
+            16      96  7/8  154         81.8      2.42
+            17     106  1/2  168  3/4    99.1      2.65
+----------------
+         TABLE 3
+        Corrugated Steel Pipe Arches  NKLASS = 11
+        2 2/3 x 1/2 inch Corrugation
+
+           Size   Minor AxisMajor AxisFull Area Full Hydraulic
+           Code     Inches    Inches    sq ft    Radius ft
+            18        13        17       1.1       0.32
+            19        15        21       1.6       0.37
+            20        18        24       2.2       0.45
+            21        20        28       2.9       0.50
+            22        24        35       4.5       0.60
+            23        29        42       6.5       0.72
+            24        33        49       8.9       0.82
+            25        38        57       11.6      0.95
+            26        43        64       14.7      1.07
+            27        47        71       18.1      1.17
+            28        52        77       21.9      1.30
+            29        57        83        26       1.42
+
+
+Modern Sewer Design, American Iron and Steel Institute
+
+----------------
+         TABLE 4
+        Corrugated Steel Pipe Arches  NKLASS = 11
+        3 x 1 inch Corrugation
+
+           Size   Minor AxisMajor AxisFull Area Full Hydraulic
+           Code     Inches    Inches    sq ft    Radius ft
+            30        31        40       7.0       0.77
+            31        31        46       9.4       0.77
+            32        41        53       12.3      1.02
+            33        46        60       15.6      1.15
+            34        51        66       19.3      1.27
+            35        55        73       23.2      1.37
+            36        59        81       27.4      1.47
+            37        63        87       32.1      1.57
+            38        67        95       37.0      1.67
+            39        71       103       42.4      1.77
+            40        75       112       48.0      1.87
+            41        79       117       54.2      1.97
+            42        83       128       60.5      2.07
+            43        87       137       67.4      2.17
+            44        91       142       74.5      2.27
+
+Modern Sewer Design, American Iron and Steel Institute
+
+-------------------
+         TABLE 5
+        Structural Plate Pipe Arches  NKLASS = 11
+        6 x 2 inch Corrugation - Bolted Seams
+        18-inch Corner Radius
+
+           Size   Minor AxisMajor AxisFull Area Full Hydraulic
+           Code     Inches    Inches    sq ft    Radius ft
+            45        55        73        22       1.37
+            46        57        76        24       1.42
+            47        59        81        26       1.47
+            48        61        84        28       1.52
+            49        63        87        31       1.57
+            50        65        92        33       1.62
+            51        67        95        35       1.67
+            52        69        98        38       1.72
+            53        71       103        40       1.77
+            54        73       106        43       1.82
+            55        75       112        46       1.87
+            56        77       114        49       1.92
+            57        79       117        52       1.97
+            58        81       123        55       2.02
+            59        83       128        58       2.07
+            60        85       131        61       2.12
+            61        87       137        64       2.17
+            62        89       139        67       2.22
+            63        91       142        71       2.27
+            64        93       148        74       2.32
+            65        95       150        78       2.37
+            66        97       152        81       2.42
+            67       100       154        85       2.49
+            68       101       161        89       2.52
+            69       103       167        93       2.57
+            70       105       169        97       2.62
+            71       107       171       101       2.67
+            72       109       178       105       2.72
+            73       111       184       109       2.77
+            74       113       186       113       2.82
+            75       115       188       118       2.87
+            76       118       190       122       2.94
+            77       119       197       126       2.97
+            78       121       199       131       3.02
+
+Modern Sewer Design, American Iron and Steel Institute
+------------------
+         TABLE 6
+        Structural Plate Pipe Arches  NKLASS = 11
+        6 x 2 inch Corrugation - Bolted Seams
+        31-inch Corner Radius
+
+           Size   Minor AxisMajor AxisFull Area Full Hydraulic
+           Code     Inches    Inches    sq ft    Radius ft
+            79       112       159        97       2.79
+            80       114       162       102       2.84
+            81       116       168       105       2.89
+            82       118       170       109       2.94
+            83       120       173       114       2.99
+            84       122       179       118       3.04
+            85       124       184       123       3.09
+            86       126       187       127       3.14
+            87       128       190       132       3.19
+            88       130       195       137       3.24
+            89       132       198       142       3.29
+            90       134       204       146       3.34
+            91       136       206       151       3.39
+            92       138       209       157       3.44
+            93       140       215       161       3.49
+            94       142       217       167       3.54
+            95       144       223       172       3.59
+            96       146       225       177       3.64
+            97       148       231       182       3.69
+            98       150       234       188       3.74
+            99       152       236       194       3.79
+           100       154       239       200       3.84
+           101       156       245       205       3.89
+           102       158       247       211       3.94
+
+Modern Sewer Design, American Iron and Steel Institute
+
