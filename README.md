@@ -1,6 +1,31 @@
 # WCH_2004_SWMM44H
  swmm 4.4.H code 
 
+## Source completeness (October 2026)
+
+This repository now holds the complete SWMM 4.4H source tree: all 163 `.FOR` and 65 `.INC` files, plus `MAIN.FOR`, the `Makefile`, the example decks (`SWDAT1.DAT`, `SWDAT4.DAT`), the block `.DNT` and `.DOT` files, the `Document/` folder and the `TransWQ/` test case. Before this, it held only 53 of the 163 `.FOR` files and 14 of the 65 `.INC` files, and had no `MAIN.FOR`, so the engine could not be built from it.
+
+The missing files were copied unchanged from
+[`SWMMEnablement/SWMM_MD_Documents/WCH_2004_SWMM_Fortran_Code`](https://github.com/SWMMEnablement/SWMM_MD_Documents/tree/main/WCH_2004_SWMM_Fortran_Code).
+Every file the two copies already shared matched byte for byte (ignoring line endings), except two include files that were damaged here:
+
+- `S1.INC` had its `COMMON/S1`, `/S2` and `/S3` declarations pasted in twice, with the copies overlapping.
+- `TIDE.INC` stopped partway through `COMMON/TIDE2` (no `STIDE(NTE,2,NTVAL)` continuation line) and had a markdown write-up appended to it.
+
+Both have been replaced with the intact versions. The Fortran itself is unchanged; this is still the 2004 code as distributed.
+
+Two source files keep their Windows 8.3 short names from the original archive:
+
+| File | Program unit | Called from |
+| --- | --- | --- |
+| `CKL1YO~N.FOR` | `SUBROUTINE CHECKSTCH` | `GETCUR.FOR` |
+| `TFYLE3~Y.FOR` | `SUBROUTINE READTHRESH` | `INDAT1.FOR` |
+
+`TFYLE3~Y.INC` is an older copy of `Threshold.inc`. It declares `THRESHID` as `CHARACTER*12` rather than `*32`, and the code does not include it.
+
+Not part of this fix: a source audit (2026) lists about 95 defects in the 4.4H code itself, such as `GUTTER.FOR:159` dropping groundwater from later subcatchments. They are left as found, so the code stays the historical record.
+
+
 # This file documents changes made to swmm44gu by Wayne Huber or others 
 # since its first release on September 28, 1999.
 
