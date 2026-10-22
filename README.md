@@ -25,6 +25,34 @@ Two source files keep their Windows 8.3 short names from the original archive:
 
 Not part of this fix: a source audit (2026) lists about 95 defects in the 4.4H code itself, such as `GUTTER.FOR:159` dropping groundwater from later subcatchments. They are left as found, so the code stays the historical record.
 
+## Building with gfortran
+
+`build_swmm44h.sh` builds a native `swmm44h.exe` with gfortran. It was tested with GNU Fortran 16.2.0 (WinLibs MinGW-w64, `winget install BrechtSanders.WinLibs.POSIX.UCRT`) under Git Bash on Windows 11.
+
+```sh
+sh build_swmm44h.sh WCH_2004 build
+cd WCH_2004
+../build/swmm44h.exe EXTRAN44.doc.txt ext44doc.out
+```
+
+The script copies the sources into the build folder and patches only that copy, so `WCH_2004/` stays as distributed. The 2004 code was written for Compaq/Lahey Fortran, and these are the changes gfortran needs:
+
+| File | Change | Why |
+| --- | --- | --- |
+| all | Cut non-tab lines at column 72; strip CR and Ctrl-Z | Old compilers ignored text past column 72 (for example `GROUND.FOR:238`'s trailing `//(5.0.010 - LR)`); tab-started lines may run longer |
+| `GETCUR.FOR` | `<KK>` variable format becomes a run-time format string | Compaq extension gfortran does not support |
+| `INDAT2.FOR` | `FORMAT(\,` becomes `FORMAT(/,` | DEC backslash edit descriptor |
+| `INTRAN.FOR`, `TRANS.FOR` | Add `EXTERNAL LINK` | Otherwise `CALL LINK` resolves to gfortran's `LINK` intrinsic |
+| `RHYDRO1.FOR` | `REAL LLONG*8` becomes `DOUBLE PRECISION LLONG` | Compaq declaration syntax |
+| `TRANS.FOR` | `REAL()` around REAL*8 arguments to `QLINTP` | The statement function has default-REAL dummies |
+| `MAIN.FOR` | Comment out `OPEN(unit=6,file='CON')` | gfortran cannot open `CON`; unit 6 is already the console |
+| `STRIP.FOR` | `FORMAT(1X,3001A1)` becomes `FORMAT(3001A1)` | The `1X` was carriage control under `CARRIAGECONTROL='FORTRAN'`, which the 2013 port removed; left in, it shifts every scratch-file column and the run stops with "EXT was found instead" |
+| new `NARGSSHIM.FOR` | `NARGS() = IARGC() + 1` | Compaq run-time function used by `CLINEDVS.FOR` |
+
+Flags: `-std=legacy -fdec -fallow-argument-mismatch -ffixed-line-length-none -fno-automatic -finit-local-zero -O1`, linked `-static`.
+
+Checked so far: `EXTRAN44.doc.txt`, `RUNOFF44.doc.txt` and `SWDAT1.DAT` run to "simulation ended normally". Extran reports a 0.01% continuity error. Runoff reports the 56.928% subsurface continuity error that the audit traces to `GUTTER.FOR:159`. The other decks in `RUNCDM.BAT` have not been run with this build.
+
 
 # This file documents changes made to swmm44gu by Wayne Huber or others 
 # since its first release on September 28, 1999.
